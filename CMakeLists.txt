@@ -35,6 +35,15 @@ find_package(OpenGL REQUIRED)
 
 add_executable(main ${SOURCE_FILES})
 
+file(GLOB SHADER_FILES
+        shaders/*.glsl)
+
+foreach (SHADER_PATH ${SHADER_FILES})
+  get_filename_component(SHADER_NAME ${SHADER_PATH} NAME)
+  message("Shader detected: ${SHADER_NAME}")
+  configure_file(${SHADER_PATH} ${PROJECT_BINARY_DIR}/${SHADER_NAME} COPYONLY)
+endforeach (SHADER_PATH)
+
 target_include_directories(main PRIVATE ${OPENGL_INCLUDE_DIR})
 add_custom_command(TARGET main POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/shaders" "${PROJECT_BINARY_DIR}")
 
