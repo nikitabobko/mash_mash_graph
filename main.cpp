@@ -13,14 +13,30 @@ static GLsizei WIDTH = 1920, HEIGHT = 1080; //размеры окна
 
 using namespace LiteMath;
 
-float3 g_camPos(0, 0, 5);
 float cam_rot[2] = {0, 0};
 int mx = 0, my = 0;
+
+float3 cam_pos = float3(0, 0, 1500);
 
 
 void windowResize(GLFWwindow *window, int width, int height) {
     WIDTH = width;
     HEIGHT = height;
+}
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+//    if (action == GLFW_REPEAT) {
+        if (key == GLFW_KEY_W) {
+            cam_pos.z -= 50;
+        } else if (key == GLFW_KEY_S) {
+            cam_pos.z += 50;
+        } else if (key == GLFW_KEY_D) {
+            cam_pos.x += 50;
+        } else if (key == GLFW_KEY_A) {
+            cam_pos.x -= 50;
+        }
+//    }
+//        activate_airship();
 }
 
 static void mouseMove(GLFWwindow *window, double xpos, double ypos) {
@@ -73,6 +89,7 @@ int main(int argc, char **argv) {
     }
 
 //    glfwSetCursorPosCallback(window, mouseMove);
+    glfwSetKeyCallback(window, key_callback);
     glfwSetWindowSizeCallback(window, windowResize);
 
     glfwMakeContextCurrent(window);
@@ -148,12 +165,13 @@ int main(int argc, char **argv) {
         GL_CHECK_ERRORS;
 
         float4x4 camRotMatrix = mul(rotate_Y_4x4(-cam_rot[1]), rotate_X_4x4(+cam_rot[0]));
-        float4x4 camTransMatrix = translate4x4(g_camPos);
+        float4x4 camTransMatrix = translate4x4(cam_pos);
         float4x4 rayMatrix = mul(camRotMatrix, camTransMatrix);
 //        program.SetUniform("g_rayMatrix", rayMatrix);
 
         program.SetUniform("g_screenWidth", WIDTH);
         program.SetUniform("g_screenHeight", HEIGHT);
+        program.SetUniform("cam_pos", cam_pos);
 
         // очистка и заполнение экрана цветом
         //

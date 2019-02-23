@@ -188,3 +188,12 @@ void ShaderProgram::SetUniform(const std::string &location, double value) const 
     }
     glUniform1d(uniformLocation, value);
 }
+
+void ShaderProgram::SetUniform(const std::string &location, const LiteMath::float3 &value) const {
+    GLint uniformLocation = glGetUniformLocation(shaderProgram, location.c_str());
+    if (uniformLocation == -1) {
+        std::cerr << "Uniform  " << location << " not found" << std::endl;
+        return;
+    }
+    glUniform3f(uniformLocation, value.x, value.y, value.z);
+}

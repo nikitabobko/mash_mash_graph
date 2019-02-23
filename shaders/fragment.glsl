@@ -20,9 +20,9 @@ uniform float3 g_bBoxMax   = float3(+1,+1,+1);
 
 uniform float4   backgroundColor = float4(0,0,0,1);
 
-vec3 cam_pos = vec3(0, 0, 2000);
+uniform float3 cam_pos;// = vec3(0, 0, 1500);
 
-vec3 cam_dir = vec3(0, 0, -100000);
+vec3 cam_dir = vec3(0, 0, -1000);
 
 vec3 cam_y = vec3(0, 1, 0);
 
@@ -51,10 +51,21 @@ Scene box_scene(vec3 p, vec3 center, vec3 lengths, vec4 color) {
     return ret;
 }
 
+Scene torus_scene(vec3 p, vec3 center, vec2 t, vec4 color) {
+    p = p - center;
+    Scene ret;
+    ret.closest = length(vec2(length(p.xz)-t.x,p.y))-t.y;
+    ret.color = color;
+    return ret;
+}
+
 Scene scene0(vec3 point) {
     Scene[] scenes = Scene[](
         sphere_scene(point, vec3(0, 200, 100), 100, vec4(0.2, 0.2, 0.2, 0)),
-        sphere_scene(point, vec3(-500, -50, 0), 300, vec4(0.4, 0.2, 0.2, 0)));
+        sphere_scene(point, vec3(-500, -50, 0), 300, vec4(0.4, 0.2, 0.2, 0)),
+//        box_scene(point, vec3(400, -400, -500), vec3(100, 200, 5000000), vec4(0.2, 0.4, 0.2, 0)),
+        torus_scene(point, vec3(100, -400, 300), vec2(100, 50), vec4(0.2, 0.2, 0.2, 0))
+    );
     Scene cur = scenes[0];
     for (int i = 0; i < scenes.length(); ++i) {
         if (scenes[i].closest < cur.closest) {
@@ -102,7 +113,7 @@ float3 EyeRayDir(float x, float y, float w, float h) {
 }
 
 bool isOutOfScene(vec3 point) {
-    int max = 1000;
+    int max = 5000;
     return abs(point.x) > max || abs(point.y) > max || abs(point.z) > max;
 }
 
@@ -167,7 +178,8 @@ bool isVisible(vec3 from, vec3 to) {
 }
 
 float4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
-    vec3 cur = vec3(x, y, 500);
+    vec3 cur = cam_pos + cam_dir + vec3(x, y, 0);
+//    vec3 cur = vec3(x, y, 500);
     vec4 color = backgroundColor;
     while (!isOutOfScene(cur)) {
         Scene scene = cur_scene(cur);
@@ -203,12 +215,7 @@ void main(void) {
   // transorm ray with matrix
   //
 //  ray_pos = (g_rayMatrix*float4(ray_pos,1)).xyz;
-//  ray_dir = float3x3(g_rayMatrix)*ray_dir;
- 
-  // intersect bounding box of the whole scene, if no intersection found return background color
-  // 
-  float tmin = 1e38f;
-  float tmax = 0;
+//    ray_dir = float3x3(g_rayMatrix)*ray_dir;
  
 //  if(!RayBoxIntersection(ray_pos, ray_dir, g_bBoxMin, g_bBoxMax, tmin, tmax))
 //  {

@@ -28,7 +28,7 @@ namespace LiteMath {
 
         float3(float a, float b, float c) : x(a), y(b), z(c) {}
 
-        float3(const float *ptr) : x(ptr[0]), y(ptr[1]), z(ptr[0]) {}
+        float3(const float *ptr) : x(ptr[0]), y(ptr[1]), z(ptr[2]) {}
 
         float x, y, z;
     };
