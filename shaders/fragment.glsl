@@ -37,17 +37,24 @@ struct Scene {
     vec4 color;
 };
 
-Scene sphere_scene(vec3 center, vec3 p, float s, vec4 color) {
+Scene sphere_scene(vec3 p, vec3 center, float radius, vec4 color) {
     Scene ret;
-    ret.closest = length(p - center) - s;
+    ret.closest = length(p - center) - radius;
+    ret.color = color;
+    return ret;
+}
+
+Scene box_scene(vec3 p, vec3 center, vec3 lengths, vec4 color) {
+    Scene ret;
+    ret.closest = length(max(abs(p-center)-lengths,0.0));
     ret.color = color;
     return ret;
 }
 
 Scene scene0(vec3 point) {
     Scene[] scenes = Scene[](
-        sphere_scene(vec3(0, 200, 0), point, 100, vec4(0.2, 0.2, 0.2, 0)),
-        sphere_scene(vec3(-500, 50, 0), point, 300, vec4(0.4, 0.2, 0.2, 0)));
+        sphere_scene(point, vec3(0, 200, 100), 100, vec4(0.2, 0.2, 0.2, 0)),
+        sphere_scene(point, vec3(-500, -50, 0), 300, vec4(0.4, 0.2, 0.2, 0)));
     Scene cur = scenes[0];
     for (int i = 0; i < scenes.length(); ++i) {
         if (scenes[i].closest < cur.closest) {
@@ -61,7 +68,7 @@ Scene cur_scene(vec3 point) {
     return scene0(point);
 }
 
-vec3[1] ligths0 = vec3[](vec3(900, 600, 0));
+vec3[1] ligths0 = vec3[](vec3(900, 600, -200));
 
 vec3[1] cur_lights() {
     return ligths0;
@@ -127,39 +134,38 @@ bool isOutOfScene(vec3 point) {
 //}
 
 
-float3 RayMarchConstantFog(float tmin, float tmax, inout float alpha) {
-    float dt = 0.05f;
-	float t  = tmin;
-	
-	alpha  = 1.0f;
-	float3 color = float3(0,0,0);
-	
-	while(t < tmax && alpha > 0.01f)
-	{
-	  float a = 0.05f;
-	  color += a*alpha*float3(1.0f,1.0f,0.0f);
-	  alpha *= (1.0f-a);
-	  t += dt;
-	}
-	
-	return color;
-}
+//float3 RayMarchConstantFog(float tmin, float tmax, inout float alpha) {
+//    float dt = 0.05f;
+//	float t  = tmin;
+//
+//	alpha  = 1.0f;
+//	float3 color = float3(0,0,0);
+//
+//	while(t < tmax && alpha > 0.01f)
+//	{
+//	  float a = 0.05f;
+//	  color += a*alpha*float3(1.0f,1.0f,0.0f);
+//	  alpha *= (1.0f-a);
+//	  t += dt;
+//	}
+//
+//	return color;
+//}
 
-bool isVisible(vec3 a, vec3 b) {
-    vec3 direction = normalize(b - a);
-    float step = min(cur_scene(a).closest, length(b - a));
-    vec3 cur = a + direction*step;
+bool isVisible(vec3 from, vec3 to) {
+    vec3 direction = normalize(to - from);
+    float step = min(cur_scene(from).closest, length(to - from));
+    vec3 cur = from + direction*step;
 
-    step = min(cur_scene(cur).closest, length(b - cur));
+    step = min(cur_scene(cur).closest, length(to - cur));
     while(step > MIN_DIST) {
         cur += direction*step;
-        step = min(cur_scene(cur).closest, length(b - cur));
+        step = min(cur_scene(cur).closest, length(to - cur));
     }
 
-    return length(b - cur) <= MIN_DIST;
+    return length(to - cur) <= 100*MIN_DIST;
 }
 
-// Алгоритм трассировки лучей
 float4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
     vec3 cur = vec3(x, y, 500);
     vec4 color = backgroundColor;
@@ -168,7 +174,6 @@ float4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
         if (scene.closest <= MIN_DIST) {
             color = scene.color;
             vec3[] ligths = cur_lights();
-//            color = vec4(ligths.length(), ligths.length(), ligths.length(), 0);
             for (int i = 0; i < ligths.length(); ++i) {
                 vec3 ligth = ligths[i];
                 if (isVisible(ligth, cur)) {
