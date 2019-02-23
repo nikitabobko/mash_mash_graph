@@ -9,7 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <random>
 
-static GLsizei WIDTH = 512, HEIGHT = 512; //размеры окна
+static GLsizei WIDTH = 1920, HEIGHT = 1080; //размеры окна
 
 using namespace LiteMath;
 
@@ -24,17 +24,17 @@ void windowResize(GLFWwindow *window, int width, int height) {
 }
 
 static void mouseMove(GLFWwindow *window, double xpos, double ypos) {
-    xpos *= 0.05f;
-    ypos *= 0.05f;
-
-    int x1 = int(xpos);
-    int y1 = int(ypos);
-
-    cam_rot[0] -= 0.25f * (y1 - my);    //Изменение угола поворота
-    cam_rot[1] -= 0.25f * (x1 - mx);
-
-    mx = int(xpos);
-    my = int(ypos);
+//    xpos *= 0.05f;
+//    ypos *= 0.05f;
+//
+//    int x1 = int(xpos);
+//    int y1 = int(ypos);
+//
+//    cam_rot[0] -= 0.25f * (y1 - my);    //Изменение угола поворота
+//    cam_rot[1] -= 0.25f * (x1 - mx);
+//
+//    mx = int(xpos);
+//    my = int(ypos);
 }
 
 
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    glfwSetCursorPosCallback(window, mouseMove);
+//    glfwSetCursorPosCallback(window, mouseMove);
     glfwSetWindowSizeCallback(window, windowResize);
 
     glfwMakeContextCurrent(window);
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
         float4x4 camRotMatrix = mul(rotate_Y_4x4(-cam_rot[1]), rotate_X_4x4(+cam_rot[0]));
         float4x4 camTransMatrix = translate4x4(g_camPos);
         float4x4 rayMatrix = mul(camRotMatrix, camTransMatrix);
-        program.SetUniform("g_rayMatrix", rayMatrix);
+//        program.SetUniform("g_rayMatrix", rayMatrix);
 
         program.SetUniform("g_screenWidth", WIDTH);
         program.SetUniform("g_screenHeight", HEIGHT);
