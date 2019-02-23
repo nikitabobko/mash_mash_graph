@@ -6,6 +6,8 @@
 //External dependencies
 #define GLFW_DLL
 
+typedef const float pDouble[9];
+
 #include <GLFW/glfw3.h>
 #include <random>
 
@@ -16,8 +18,19 @@ using namespace LiteMath;
 float cam_rot[2] = {0, 0};
 int mx = 0, my = 0;
 
-float3 cam_pos = float3(0, 0, 1500);
+float3 default_cam_pos = float3(0, 0, 1500);
+float3 default_cam_dir = float3(0, 0, -1000);
+float3 default_cam_y = float3(0, 1, 0);
+float3 default_cam_x = float3(1, 0, 0);
 
+
+float3 cam_pos = default_cam_pos;
+
+float3 cam_dir = default_cam_dir;
+
+float3 cam_y = default_cam_y;
+
+float3 cam_x = default_cam_x;
 
 void windowResize(GLFWwindow *window, int width, int height) {
     WIDTH = width;
@@ -27,19 +40,55 @@ void windowResize(GLFWwindow *window, int width, int height) {
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 //    if (action == GLFW_REPEAT) {
         if (key == GLFW_KEY_W) {
-            cam_pos.z -= 50;
+            cam_pos += 50*cam_dir.normalized();
+//            cam_pos.z -= 50;
         } else if (key == GLFW_KEY_S) {
-            cam_pos.z += 50;
+            cam_pos -= 50*cam_dir.normalized();
+//            cam_pos.z += 50;
         } else if (key == GLFW_KEY_D) {
-            cam_pos.x += 50;
+            cam_pos += 50*cam_x;
+//            cam_pos.x += 50;
         } else if (key == GLFW_KEY_A) {
-            cam_pos.x -= 50;
+            cam_pos -= 50*cam_x;
+//            cam_pos.x -= 50;
+        } else if (key == GLFW_KEY_F) {
+            cam_pos -= 50*cam_y;
+        } else if (key == GLFW_KEY_R) {
+            cam_pos += 50*cam_y;
         }
+//        printf("x: %lf, y: %lf, z: %lf\n", cam_pos.x, cam_pos.y, cam_pos.z);
 //    }
 //        activate_airship();
 }
 
 static void mouseMove(GLFWwindow *window, double xpos, double ypos) {
+    xpos -= WIDTH/2;
+    ypos -= HEIGHT/2;
+
+    double along_x = xpos / (WIDTH/2) * M_PI_2;
+    double along_y = ypos / (HEIGHT/2) * M_PI_2;
+
+    const float along_x_matrix[] = {
+            (float) cos(along_x), 0, (float) -sin(along_x),
+            0, 1, 0,
+            (float) sin(along_x), 0, (float) cos(along_x)
+    };
+    float3x3 rotate_along_x = float3x3(along_x_matrix);
+
+    const float along_y_matrix[] = {
+            1, 0, 0,
+            0, (float) cos(along_y), (float) sin(along_y),
+            0, (float) -sin(along_y), (float) cos(along_y)
+    };
+    float3x3 rotate_along_y = float3x3(along_y_matrix);
+
+    cam_dir = rotate_along_y*(rotate_along_x*default_cam_dir);
+    cam_x = rotate_along_y*(rotate_along_x*default_cam_x);
+    cam_y = rotate_along_y*(rotate_along_x*default_cam_y);
+
+//    printf("xpos: %lf/%d\n", xpos, WIDTH);
+//    printf("ypos: %lf/%d\n", ypos, HEIGHT);
+
 //    xpos *= 0.05f;
 //    ypos *= 0.05f;
 //
@@ -81,19 +130,18 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL ray marching sample", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL ray marching sample",  glfwGetPrimaryMonitor(), nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
 
-//    glfwSetCursorPosCallback(window, mouseMove);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouseMove);
     glfwSetKeyCallback(window, key_callback);
     glfwSetWindowSizeCallback(window, windowResize);
-
     glfwMakeContextCurrent(window);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     if (initGL() != 0)
         return -1;
@@ -172,6 +220,9 @@ int main(int argc, char **argv) {
         program.SetUniform("g_screenWidth", WIDTH);
         program.SetUniform("g_screenHeight", HEIGHT);
         program.SetUniform("cam_pos", cam_pos);
+        program.SetUniform("cam_dir", cam_dir);
+        program.SetUniform("cam_x", cam_x);
+        program.SetUniform("cam_y", cam_y);
 
         // очистка и заполнение экрана цветом
         //

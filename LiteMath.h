@@ -30,6 +30,11 @@ namespace LiteMath {
 
         float3(const float *ptr) : x(ptr[0]), y(ptr[1]), z(ptr[2]) {}
 
+        float3 normalized() const {
+            float length = sqrt(x*x + y*y + z*z);
+            return float3(x/length, y/length, z/length);
+        }
+
         float x, y, z;
     };
 
@@ -51,6 +56,34 @@ namespace LiteMath {
         int x, y, z;
     };
 
+    struct float3x3 {
+        float3x3() { identity(); }
+
+        float3x3(const float arr[9]) {
+            row[0] = float3(arr[0], arr[1], arr[2]);
+            row[1] = float3(arr[3], arr[4], arr[5]);
+            row[2] = float3(arr[6], arr[7], arr[8]);
+        }
+
+        void identity() {
+            row[0] = float3(1, 0, 0);
+            row[1] = float3(0, 1, 0);
+            row[2] = float3(0, 0, 1);
+        }
+
+        float3 operator*(float3 a) {
+            return float3(
+                    row[0].x * a.x + row[0].y * a.y + row[0].z * a.z,
+                    row[1].x * a.x + row[1].y * a.y + row[1].z * a.z,
+                    row[2].x * a.x + row[2].y * a.y + row[2].z * a.z);
+        }
+
+        float *L() { return (float *) row; }
+
+        const float *L() const { return (float *) row; }
+
+        float3 row[3];
+    };
 
     struct float4x4 {
         float4x4() { identity(); }

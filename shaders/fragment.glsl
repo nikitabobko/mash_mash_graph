@@ -18,15 +18,15 @@ uniform float3 g_bBoxMax   = float3(+1,+1,+1);
 
 //uniform float4x4 g_rayMatrix;
 
-uniform float4   backgroundColor = float4(0,0,0,1);
+uniform float4 backgroundColor = float4(0,0,0,1);
 
-uniform float3 cam_pos;// = vec3(0, 0, 1500);
+uniform vec3 cam_pos;
 
-vec3 cam_dir = vec3(0, 0, -1000);
+uniform vec3 cam_dir;
 
-vec3 cam_y = vec3(0, 1, 0);
+uniform vec3 cam_y;
 
-vec3 cam_x = vec3(1, 0, 0);
+uniform vec3 cam_x;
 
 float4 WHITE = vec4(1, 1, 1, 0);
 
@@ -64,7 +64,7 @@ Scene scene0(vec3 point) {
         sphere_scene(point, vec3(0, 200, 100), 100, vec4(0.2, 0.2, 0.2, 0)),
         sphere_scene(point, vec3(-500, -50, 0), 300, vec4(0.4, 0.2, 0.2, 0)),
         box_scene(point, vec3(400, -400, -500), vec3(100, 200, 200), vec4(0.2, 0.4, 0.2, 0)),
-        torus_scene(point, vec3(100, -400, 300), vec2(100, 50), vec4(0.2, 0.2, 0.2, 0))
+        torus_scene(point, vec3(100, -400, 300), vec2(200, 50), vec4(0.2, 0.2, 0.2, 0))
     );
     Scene cur = scenes[0];
     for (int i = 0; i < scenes.length(); ++i) {
@@ -79,9 +79,9 @@ Scene cur_scene(vec3 point) {
     return scene0(point);
 }
 
-vec3[1] ligths0 = vec3[](vec3(900, 600, -200));
+vec3[2] ligths0 = vec3[](vec3(900, 600, -200), vec3(-500, 300, -800));
 
-vec3[1] cur_lights() {
+vec3[2] cur_lights() {
     return ligths0;
 }
 
@@ -191,6 +191,8 @@ float4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
                 if (isVisible(ligth, cur)) {
                     vec3 normal = estimateNormal(cur);
                     color += max(dot(normalize(ligth - cur), normal), 0.f);
+//                    float dist = length(ligth - cur);
+//                    color += 100000/(dist*dist);
                 }
             }
             break;
