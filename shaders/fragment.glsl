@@ -63,7 +63,7 @@ Scene scene0(vec3 point) {
     Scene[] scenes = Scene[](
         sphere_scene(point, vec3(0, 200, 100), 100, vec4(0.2, 0.2, 0.2, 0)),
         sphere_scene(point, vec3(-500, -50, 0), 300, vec4(0.4, 0.2, 0.2, 0)),
-//        box_scene(point, vec3(400, -400, -500), vec3(100, 200, 5000000), vec4(0.2, 0.4, 0.2, 0)),
+        box_scene(point, vec3(400, -400, -500), vec3(100, 200, 200), vec4(0.2, 0.4, 0.2, 0)),
         torus_scene(point, vec3(100, -400, 300), vec2(100, 50), vec4(0.2, 0.2, 0.2, 0))
     );
     Scene cur = scenes[0];
