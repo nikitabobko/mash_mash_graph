@@ -13,7 +13,7 @@ layout(location = 0) out vec4 fragColor;
 uniform int g_screenWidth;
 uniform int g_screenHeight;
 
-int SCENE_MAX = 5000;
+int SCENE_MAX = 10000;
 
 uniform float3 g_bBoxMin   = float3(-1,-1,-1);
 uniform float3 g_bBoxMax   = float3(+1,+1,+1);
@@ -79,7 +79,7 @@ Scene scene0(vec3 point) {
         sphere_scene(point, vec3(-500, -50, 0), 300, vec4(0.4, 0.2, 0.2, 0)),
         box_scene(point, vec3(400, -400, -500), vec3(100, 200, 200), vec4(0.2, 0.4, 0.2, 0)),
         torus_scene(point, vec3(100, -400, 300), vec2(1000, 50), vec4(0.2, 0.2, 0.2, 0)),
-        y_chess_plane_scene(point, -700, vec2(2500, 2500), vec4(0.2, 0.2, 0.1, 10), BLACK)
+        y_chess_plane_scene(point, -700, vec2(2000, 2000), vec4(0.2, 0.2, 0.1, 10), BLACK)
     );
     Scene cur = scenes[0];
     for (int i = 0; i < scenes.length(); ++i) {

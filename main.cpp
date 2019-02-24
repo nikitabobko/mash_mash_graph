@@ -17,11 +17,12 @@ using namespace LiteMath;
 
 float cam_rot[2] = {0, 0};
 
+float3 default_cam_pos = float3(0, 0, 1500);
 float3 default_cam_dir = float3(0, 0, -1000);
 float3 default_cam_y = float3(0, 1, 0);
 float3 default_cam_x = float3(1, 0, 0);
 
-float3 cam_pos = float3(0, 0, 1500);
+float3 cam_pos = default_cam_pos;
 
 float3 cam_dir = default_cam_dir;
 
@@ -33,6 +34,8 @@ void windowResize(GLFWwindow *window, int width, int height) {
     WIDTH = width;
     HEIGHT = height;
 }
+
+bool first = true;
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 //    if (action == GLFW_REPEAT) {
@@ -55,13 +58,21 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         }
 //        printf("x: %lf, y: %lf, z: %lf\n", cam_pos.x, cam_pos.y, cam_pos.z);
 //    }
+//    GLFW_RELEASE;
+    if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_0) {
+            first = true;
+            cam_pos = default_cam_pos;
+            cam_dir = default_cam_dir;
+            cam_x = default_cam_x;
+            cam_y = default_cam_y;
+        }
+    }
 //        activate_airship();
 }
 
 int initial_xpos = 0;
 int initial_ypos = 0;
-
-bool first = true;
 
 static float3 vector_in_basis(const float3 &components, const float3 &x, const float3 &y, const float3 &z) {
     return components.x * x + components.y * y + components.z * z;
