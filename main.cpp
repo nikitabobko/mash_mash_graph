@@ -2,6 +2,8 @@
 #include "common.h"
 #include "ShaderProgram.h"
 #include "LiteMath.h"
+#include <thread>
+#include <chrono>
 
 //External dependencies
 #define GLFW_DLL
@@ -30,45 +32,72 @@ float3 cam_y = default_cam_y;
 
 float3 cam_x = default_cam_x;
 
+const float DEFAULT_MOVE_SPEED = 50.0f;
+
+float cur_cam_dir_speed = 0;
+float cur_cam_x_speed = 0;
+float cur_cam_y_speed = 0;
+
 void windowResize(GLFWwindow *window, int width, int height) {
     WIDTH = width;
     HEIGHT = height;
 }
 
+bool focused = true;
+
 bool first = true;
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-//    if (action == GLFW_REPEAT) {
-        if (key == GLFW_KEY_W) {
-            cam_pos += 50*cam_dir.normalized();
-//            cam_pos.z -= 50;
-        } else if (key == GLFW_KEY_S) {
-            cam_pos -= 50*cam_dir.normalized();
-//            cam_pos.z += 50;
-        } else if (key == GLFW_KEY_D) {
-            cam_pos += 50*cam_x;
-//            cam_pos.x += 50;
-        } else if (key == GLFW_KEY_A) {
-            cam_pos -= 50*cam_x;
-//            cam_pos.x -= 50;
-        } else if (key == GLFW_KEY_F) {
-            cam_pos -= 50*cam_y;
-        } else if (key == GLFW_KEY_R) {
-            cam_pos += 50*cam_y;
-        }
-//        printf("x: %lf, y: %lf, z: %lf\n", cam_pos.x, cam_pos.y, cam_pos.z);
-//    }
-//    GLFW_RELEASE;
+    if (!focused) {
+        return;
+    }
+    if (key == GLFW_KEY_ESCAPE) {
+        glfwSetWindowShouldClose(window, 1);
+        return;
+    }
     if (action == GLFW_PRESS) {
-        if (key == GLFW_KEY_0) {
+        if (key == GLFW_KEY_W) {
+            cur_cam_dir_speed = DEFAULT_MOVE_SPEED;
+        } else if (key == GLFW_KEY_S) {
+            cur_cam_dir_speed = -DEFAULT_MOVE_SPEED;
+        } else if (key == GLFW_KEY_D) {
+            cur_cam_x_speed = DEFAULT_MOVE_SPEED;
+        } else if (key == GLFW_KEY_A) {
+            cur_cam_x_speed = -DEFAULT_MOVE_SPEED;
+        } else if (key == GLFW_KEY_F) {
+            cur_cam_y_speed = -DEFAULT_MOVE_SPEED;
+        } else if (key == GLFW_KEY_R) {
+            cur_cam_y_speed = DEFAULT_MOVE_SPEED;
+        } else if (key == GLFW_KEY_0) {
             first = true;
             cam_pos = default_cam_pos;
             cam_dir = default_cam_dir;
             cam_x = default_cam_x;
             cam_y = default_cam_y;
+        } else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+            cur_cam_dir_speed *= 2;
+            cur_cam_x_speed *= 2;
+            cur_cam_y_speed *= 2;
+        }
+    } else if (action == GLFW_RELEASE) {
+        if (key == GLFW_KEY_W) {
+            cur_cam_dir_speed = 0;
+        } else if (key == GLFW_KEY_S) {
+            cur_cam_dir_speed = 0;
+        } else if (key == GLFW_KEY_D) {
+            cur_cam_x_speed = 0;
+        } else if (key == GLFW_KEY_A) {
+            cur_cam_x_speed = 0;
+        } else if (key == GLFW_KEY_F) {
+            cur_cam_y_speed = 0;
+        } else if (key == GLFW_KEY_R) {
+            cur_cam_y_speed = 0;
+        } else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
+            cur_cam_dir_speed /= 2;
+            cur_cam_x_speed /= 2;
+            cur_cam_y_speed /= 2;
         }
     }
-//        activate_airship();
 }
 
 int initial_xpos = 0;
@@ -79,6 +108,9 @@ static float3 vector_in_basis(const float3 &components, const float3 &x, const f
 }
 
 static void mouseMove(GLFWwindow *window, double x, double y) {
+    if (!focused) {
+        return;
+    }
     int xpos = (int)x % WIDTH;
     int ypos = (int)y % HEIGHT;
 
@@ -94,10 +126,6 @@ static void mouseMove(GLFWwindow *window, double x, double y) {
 
     xpos -= initial_xpos;
     ypos -= initial_ypos;
-
-
-//    xpos -= prev_x;
-//    ypos -= prev_y;
 
     double along_xz = 1. * xpos / (WIDTH/2) * M_PI;
     double along_yz = 1. * ypos / (HEIGHT/2) * M_PI;
@@ -122,32 +150,12 @@ static void mouseMove(GLFWwindow *window, double x, double y) {
     cam_dir = length(default_cam_dir)*(rotate_along_xz*(rotate_along_yz*default_cam_dir.normalized()));
 
     printf("%lf==0 %lf==0 %lf==0\n", dot(cam_dir, cam_y), dot(cam_dir, cam_x), dot(cam_x, cam_y));
-//    cam_dir = length(default_cam_dir)*(*default_cam_dir.normalized());
+}
 
-
-//    float3 components = ;
-
-//
-//    cam_dir = cam_pos + rotate_along_yz*(rotate_along_xz*(cam_dir - cam_pos));
-//    cam_x = cam_pos + rotate_along_yz*(rotate_along_xz*(cam_x - cam_pos));
-//    cam_y = cam_pos + rotate_along_yz*(rotate_along_xz*(cam_y - cam_pos));
-
-//    printf("xpos: %lf/%d\n", xpos, WIDTH);
-//    printf("ypos: %lf/%d\n", ypos, HEIGHT);
-
-//    xpos *= 0.05f;
-//    ypos *= 0.05f;
-//
-//    int x1 = int(xpos);
-//    int y1 = int(ypos);
-//
-//    cam_rot[0] -= 0.25f * (y1 - my);    //Изменение угола поворота
-//    cam_rot[1] -= 0.25f * (x1 - mx);
-//
-//    mx = int(xpos);
-//    my = int(ypos);
-//    prev_x = xpos;
-//    prev_y = ypos;
+static void calculate_cur_cam_pos() {
+    cam_pos += cam_dir.normalized() * cur_cam_dir_speed;
+    cam_pos += cam_x * cur_cam_x_speed;
+    cam_pos += cam_y * cur_cam_y_speed;
 }
 
 
@@ -165,6 +173,10 @@ int initGL() {
     std::cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
     return 0;
+}
+
+static void focuse_changed_callback(GLFWwindow *window, int focused_local) {
+    focused = focused_local != 0;
 }
 
 int main(int argc, char **argv) {
@@ -190,6 +202,7 @@ int main(int argc, char **argv) {
     glfwSetKeyCallback(window, key_callback);
     glfwSetWindowSizeCallback(window, windowResize);
     glfwMakeContextCurrent(window);
+    glfwSetWindowFocusCallback(window, focuse_changed_callback);
 
     if (initGL() != 0)
         return -1;
@@ -251,6 +264,12 @@ int main(int argc, char **argv) {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
+        if (!focused) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            first = true;
+            continue;
+        }
+
         //очищаем экран каждый кадр
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         GL_CHECK_ERRORS;
@@ -264,6 +283,8 @@ int main(int argc, char **argv) {
         float4x4 camTransMatrix = translate4x4(cam_pos);
         float4x4 rayMatrix = mul(camRotMatrix, camTransMatrix);
 //        program.SetUniform("g_rayMatrix", rayMatrix);
+
+        calculate_cur_cam_pos();
 
         program.SetUniform("g_screenWidth", WIDTH);
         program.SetUniform("g_screenHeight", HEIGHT);
