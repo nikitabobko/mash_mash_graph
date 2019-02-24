@@ -16,15 +16,12 @@ static GLsizei WIDTH = 1920, HEIGHT = 1080; //размеры окна
 using namespace LiteMath;
 
 float cam_rot[2] = {0, 0};
-int mx = 0, my = 0;
 
-float3 default_cam_pos = float3(0, 0, 1500);
 float3 default_cam_dir = float3(0, 0, -1000);
 float3 default_cam_y = float3(0, 1, 0);
 float3 default_cam_x = float3(1, 0, 0);
 
-
-float3 cam_pos = default_cam_pos;
+float3 cam_pos = float3(0, 0, 1500);
 
 float3 cam_dir = default_cam_dir;
 
@@ -61,30 +58,68 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //        activate_airship();
 }
 
-static void mouseMove(GLFWwindow *window, double xpos, double ypos) {
+int initial_xpos = 0;
+int initial_ypos = 0;
+
+bool first = true;
+
+static float3 vector_in_basis(const float3 &components, const float3 &x, const float3 &y, const float3 &z) {
+    return components.x * x + components.y * y + components.z * z;
+}
+
+static void mouseMove(GLFWwindow *window, double x, double y) {
+    int xpos = (int)x % WIDTH;
+    int ypos = (int)y % HEIGHT;
+
     xpos -= WIDTH/2;
     ypos -= HEIGHT/2;
 
-    double along_x = xpos / (WIDTH/2) * M_PI_2;
-    double along_y = ypos / (HEIGHT/2) * M_PI_2;
+    if (first) {
+        initial_xpos = xpos;
+        initial_ypos = ypos;
+        first = false;
+        return;
+    }
 
-    const float along_x_matrix[] = {
-            (float) cos(along_x), 0, (float) -sin(along_x),
+    xpos -= initial_xpos;
+    ypos -= initial_ypos;
+
+
+//    xpos -= prev_x;
+//    ypos -= prev_y;
+
+    double along_xz = 1. * xpos / (WIDTH/2) * M_PI;
+    double along_yz = 1. * ypos / (HEIGHT/2) * M_PI;
+
+    const float along_xz_matrix[] = {
+            (float) cos(along_xz), 0, (float) -sin(along_xz),
             0, 1, 0,
-            (float) sin(along_x), 0, (float) cos(along_x)
+            (float) sin(along_xz), 0, (float) cos(along_xz)
     };
-    float3x3 rotate_along_x = float3x3(along_x_matrix);
+    float3x3 rotate_along_xz = float3x3(along_xz_matrix);
 
-    const float along_y_matrix[] = {
+    const float along_yz_matrix[] = {
             1, 0, 0,
-            0, (float) cos(along_y), (float) sin(along_y),
-            0, (float) -sin(along_y), (float) cos(along_y)
+            0, (float) cos(along_yz), (float) sin(along_yz),
+            0, (float) -sin(along_yz), (float) cos(along_yz)
     };
-    float3x3 rotate_along_y = float3x3(along_y_matrix);
+    float3x3 rotate_along_yz = float3x3(along_yz_matrix);
 
-    cam_dir = rotate_along_y*(rotate_along_x*default_cam_dir);
-    cam_x = rotate_along_y*(rotate_along_x*default_cam_x);
-    cam_y = rotate_along_y*(rotate_along_x*default_cam_y);
+    cam_y = rotate_along_yz*default_cam_y;
+    cam_x = rotate_along_xz*default_cam_x;
+
+    cam_dir = length(default_cam_dir)*(rotate_along_xz*(rotate_along_yz*default_cam_dir.normalized()));
+
+    printf("%lf==0 %lf==0 %lf==0\n", dot(cam_dir, cam_y), dot(cam_dir, cam_x), dot(cam_x, cam_y));
+//    cam_dir = length(default_cam_dir)*(*default_cam_dir.normalized());
+
+
+//    float3 components = ;
+
+//
+//    cam_dir = cam_pos + rotate_along_yz*(rotate_along_xz*(cam_dir - cam_pos));
+//    cam_x = cam_pos + rotate_along_yz*(rotate_along_xz*(cam_x - cam_pos));
+//    cam_y = cam_pos + rotate_along_yz*(rotate_along_xz*(cam_y - cam_pos));
 
 //    printf("xpos: %lf/%d\n", xpos, WIDTH);
 //    printf("ypos: %lf/%d\n", ypos, HEIGHT);
@@ -100,6 +135,8 @@ static void mouseMove(GLFWwindow *window, double xpos, double ypos) {
 //
 //    mx = int(xpos);
 //    my = int(ypos);
+//    prev_x = xpos;
+//    prev_y = ypos;
 }
 
 
