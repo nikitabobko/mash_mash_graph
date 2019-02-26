@@ -8,16 +8,12 @@
 //External dependencies
 #define GLFW_DLL
 
-typedef const float pDouble[9];
-
 #include <GLFW/glfw3.h>
 #include <random>
 
 static GLsizei WIDTH = 1024, HEIGHT = 512; //размеры окна
 
 using namespace LiteMath;
-
-float cam_rot[2] = {0, 0};
 
 float3 default_cam_pos = float3(0, 0, 1500);
 float3 default_cam_dir = float3(0, 0, -1);
@@ -32,7 +28,9 @@ float3 cam_y = default_cam_y;
 
 float3 cam_x = default_cam_x;
 
-const float DEFAULT_MOVE_SPEED = 50.0f;
+const float DEFAULT_MOVE_SPEED = 20.0f;
+
+const float MULT_SPEED = 3.f;
 
 float cur_cam_dir_speed = 0;
 float cur_cam_x_speed = 0;
@@ -75,9 +73,9 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             cam_x = default_cam_x;
             cam_y = default_cam_y;
         } else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
-            cur_cam_dir_speed *= 2;
-            cur_cam_x_speed *= 2;
-            cur_cam_y_speed *= 2;
+            cur_cam_dir_speed *= MULT_SPEED;
+            cur_cam_x_speed *= MULT_SPEED;
+            cur_cam_y_speed *= MULT_SPEED;
         }
     } else if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_W) {
@@ -93,19 +91,15 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         } else if (key == GLFW_KEY_R) {
             cur_cam_y_speed = 0;
         } else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
-            cur_cam_dir_speed /= 2;
-            cur_cam_x_speed /= 2;
-            cur_cam_y_speed /= 2;
+            cur_cam_dir_speed /= MULT_SPEED;
+            cur_cam_x_speed /= MULT_SPEED;
+            cur_cam_y_speed /= MULT_SPEED;
         }
     }
 }
 
 int initial_xpos = 0;
 int initial_ypos = 0;
-
-static float3 vector_in_basis(const float3 &components, const float3 &x, const float3 &y, const float3 &z) {
-    return components.x * x + components.y * y + components.z * z;
-}
 
 static void mouseMove(GLFWwindow *window, double x, double y) {
     if (!focused) {
@@ -127,8 +121,8 @@ static void mouseMove(GLFWwindow *window, double x, double y) {
     xpos -= initial_xpos;
     ypos -= initial_ypos;
 
-    double along_xz = 1. * xpos / (WIDTH/2) * M_PI;
-    double along_yz = 1. * ypos / (HEIGHT/2) * M_PI;
+    double along_xz = xpos / (WIDTH/2.) * M_PI;
+    double along_yz = ypos / (HEIGHT/2.) * M_PI;
 
     const float along_xz_matrix[] = {
             (float) cos(along_xz), 0, (float) -sin(along_xz),
@@ -160,7 +154,6 @@ static void calculate_cur_cam_pos() {
 
 
 int initGL() {
-    int res = 0;
     //грузим функции opengl через glad
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
@@ -177,6 +170,9 @@ int initGL() {
 
 static void focuse_changed_callback(GLFWwindow *window, int focused_local) {
     focused = focused_local != 0;
+    if (!focused) {
+        first = true;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -223,7 +219,6 @@ int main(int argc, char **argv) {
     glfwSwapInterval(1); // force 60 frames per second
 
     //Создаем и загружаем геометрию поверхности
-    //
     GLuint g_vertexBufferObject;
     GLuint g_vertexArrayObject;
     {
@@ -254,7 +249,7 @@ int main(int argc, char **argv) {
         GL_CHECK_ERRORS;
         glEnableVertexAttribArray(vertexLocation);
         GL_CHECK_ERRORS;
-        glVertexAttribPointer(vertexLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(vertexLocation, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
         GL_CHECK_ERRORS;
 
         glBindVertexArray(0);
@@ -266,7 +261,6 @@ int main(int argc, char **argv) {
 
         if (!focused) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            first = true;
             continue;
         }
 
@@ -279,11 +273,6 @@ int main(int argc, char **argv) {
         program.StartUseShader();
         GL_CHECK_ERRORS;
 
-        float4x4 camRotMatrix = mul(rotate_Y_4x4(-cam_rot[1]), rotate_X_4x4(+cam_rot[0]));
-        float4x4 camTransMatrix = translate4x4(cam_pos);
-        float4x4 rayMatrix = mul(camRotMatrix, camTransMatrix);
-//        program.SetUniform("g_rayMatrix", rayMatrix);
-
         calculate_cur_cam_pos();
 
         program.SetUniform("g_screenWidth", WIDTH);
@@ -294,13 +283,11 @@ int main(int argc, char **argv) {
         program.SetUniform("cam_y", cam_y);
 
         // очистка и заполнение экрана цветом
-        //
         glViewport(0, 0, WIDTH, HEIGHT);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         // draw call
-        //
         glBindVertexArray(g_vertexArrayObject);
         GL_CHECK_ERRORS;
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -312,7 +299,6 @@ int main(int argc, char **argv) {
     }
 
     //очищаем vboи vao перед закрытием программы
-    //
     glDeleteVertexArrays(1, &g_vertexArrayObject);
     glDeleteBuffers(1, &g_vertexBufferObject);
 

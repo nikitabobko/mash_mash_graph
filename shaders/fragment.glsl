@@ -154,14 +154,6 @@ vec3 EyeRayDir(float x, float y, float w) {
     float3 ray_dir;
 
     return normalize(cam_x*x + cam_y*y + cam_dir*(w)/tan(fov/2.0f));
-
-//    ray_dir.x = ;
-//    ray_dir.y = y;
-//    ray_dir.z = -(w)/tan(fov/2.0f);
-//
-//    return normalize(ray_dir);
-
-    return normalize(cam_dir + x*cam_x + y*cam_y);
 }
 
 bool isOutOfScene(vec3 point) {
