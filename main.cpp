@@ -13,7 +13,7 @@ typedef const float pDouble[9];
 #include <GLFW/glfw3.h>
 #include <random>
 
-static GLsizei WIDTH = 1920, HEIGHT = 1080; //размеры окна
+static GLsizei WIDTH = 1024, HEIGHT = 512; //размеры окна
 
 using namespace LiteMath;
 
@@ -150,8 +150,6 @@ static void mouseMove(GLFWwindow *window, double x, double y) {
     cam_x = rotate*default_cam_x;
 
     cam_dir = rotate*default_cam_dir;
-
-    printf("%lf==0 %lf==0 %lf==0\n", dot(cam_dir, cam_y), dot(cam_dir, cam_x), dot(cam_x, cam_y));
 }
 
 static void calculate_cur_cam_pos() {
@@ -192,7 +190,7 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL ray marching sample",  glfwGetPrimaryMonitor(), nullptr);
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL ray marching sample", nullptr, nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
