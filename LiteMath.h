@@ -631,6 +631,24 @@ namespace LiteMath {
         return m;
     }
 
+    static inline float3x3 make_float3x3_by_columns(float3 a, float3 b, float3 c) {
+        float3x3 m;
+
+        m.row[0].x = a.x;
+        m.row[1].x = a.y;
+        m.row[2].x = a.z;
+
+        m.row[0].y = b.x;
+        m.row[1].y = b.y;
+        m.row[2].y = b.z;
+
+        m.row[0].z = c.x;
+        m.row[1].z = c.y;
+        m.row[2].z = c.z;
+
+        return m;
+    }
+
     static inline float4x4 transpose4x4(float4x4 m) {
         return make_float4x4_by_columns(m.row[0], m.row[1], m.row[2], m.row[3]);
     }
@@ -642,6 +660,15 @@ namespace LiteMath {
         const float4 column4 = mul(m1, make_float4(m2.row[0].w, m2.row[1].w, m2.row[2].w, m2.row[3].w));
 
         return make_float4x4_by_columns(column1, column2, column3, column4);
+    }
+
+    static inline float3x3 mul(float3x3 m1, float3x3 m2) {
+        const float3 column1 = m1 * make_float3(m2.row[0].x, m2.row[1].x, m2.row[2].x);
+        const float3 column2 = m1 * make_float3(m2.row[0].y, m2.row[1].y, m2.row[2].y);
+        const float3 column3 = m1 * make_float3(m2.row[0].z, m2.row[1].z, m2.row[2].z);
+
+
+        return make_float3x3_by_columns(column1, column2, column3);
     }
 
     static inline float4x4 translate4x4(float3 t) {

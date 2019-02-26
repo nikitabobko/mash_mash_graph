@@ -20,7 +20,7 @@ using namespace LiteMath;
 float cam_rot[2] = {0, 0};
 
 float3 default_cam_pos = float3(0, 0, 1500);
-float3 default_cam_dir = float3(0, 0, -1000);
+float3 default_cam_dir = float3(0, 0, -1);
 float3 default_cam_y = float3(0, 1, 0);
 float3 default_cam_x = float3(1, 0, 0);
 
@@ -144,10 +144,12 @@ static void mouseMove(GLFWwindow *window, double x, double y) {
     };
     float3x3 rotate_along_yz = float3x3(along_yz_matrix);
 
-    cam_y = rotate_along_yz*default_cam_y;
-    cam_x = rotate_along_xz*default_cam_x;
+    float3x3 rotate = mul(rotate_along_xz, rotate_along_yz);
 
-    cam_dir = length(default_cam_dir)*(rotate_along_xz*(rotate_along_yz*default_cam_dir.normalized()));
+    cam_y = rotate*default_cam_y;
+    cam_x = rotate*default_cam_x;
+
+    cam_dir = rotate*default_cam_dir;
 
     printf("%lf==0 %lf==0 %lf==0\n", dot(cam_dir, cam_y), dot(cam_dir, cam_x), dot(cam_x, cam_y));
 }

@@ -149,7 +149,18 @@ vec4 light_point(vec3 point) {
     return ligth_point_scene0(point);
 }
 
-vec3 EyeRayDir(float x, float y) {
+vec3 EyeRayDir(float x, float y, float w) {
+    float fov = 3.141592654f/(2.0f);
+    float3 ray_dir;
+
+    return normalize(cam_x*x + cam_y*y + cam_dir*(w)/tan(fov/2.0f));
+
+//    ray_dir.x = ;
+//    ray_dir.y = y;
+//    ray_dir.z = -(w)/tan(fov/2.0f);
+//
+//    return normalize(ray_dir);
+
     return normalize(cam_dir + x*cam_x + y*cam_y);
 }
 
@@ -158,7 +169,7 @@ bool isOutOfScene(vec3 point) {
 }
 
 vec4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
-    vec3 cur = cam_pos + cam_dir + vec3(x, y, 0);
+    vec3 cur = cam_pos;
     vec4 color = backgroundColor;
     while (!isOutOfScene(cur)) {
         Scene scene = cur_scene(cur);
@@ -178,7 +189,7 @@ void main(void) {
     float x = fragmentTexCoord.x*w - w/2;
     float y = fragmentTexCoord.y*h - h/2;
 
-    float3 ray_dir = EyeRayDir(x,y);
+    float3 ray_dir = EyeRayDir(x,y, w);
 
     fragColor = RayTrace(x, y, ray_dir, w, h);
 }
