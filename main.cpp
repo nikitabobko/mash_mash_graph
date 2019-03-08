@@ -28,7 +28,7 @@ float3 cam_y = default_cam_y;
 
 float3 cam_x = default_cam_x;
 
-const float DEFAULT_MOVE_SPEED = 20.0f;
+const float DEFAULT_MOVE_SPEED = 50.0f;
 
 const float MULT_SPEED = 3.f;
 
