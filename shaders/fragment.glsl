@@ -28,22 +28,37 @@ uniform vec3 cam_y;
 
 uniform vec3 cam_x;
 
+// Colors
 vec4 WHITE = vec4(1, 1, 1, 0);
 vec4 HALF_WHITE = vec4(0.5, 0.5, 0.5, 0);
 vec4 QUAD_WHITE = vec4(0.25, 0.25, 0.25, 0);
 vec4 BLACK = vec4(0, 0, 0, 0);
 vec4 INDIGO = vec4(75.f/255,0,130.f/255,0);
+vec4 GREY = vec4(0.2, 0.2, 0.2, 0);
+
+// Ambient
+vec4 NO_AMBIENT = BLACK;
+vec4 GREEEN_RUBBER_AMBIENT = vec4(0.0, 0.05, 0.0, 0);
+
+// Diffuse
+vec4 GREEEN_RUBBER_DIFFUSE = vec4(0.4, 0.5, 0.4, 0.f);
 
 // Specular
 vec4 NO_SPECULAR = BLACK;
+vec4 GREEEN_RUBBER_SPECULAR = vec4(0.04, 0.7, 0.04, 0.f);
+vec4 EMERALD_SPECULAR = vec4(0.633, 0.727811, 0.633, 0);
+float EMERALD_SPECULAR_SHINESS = 0.6;
+
+// Specualr shiness
 float NO_SPECULAR_SHINESS = 0.f;
-vec4 SPECULAR_EMERALD = vec4(0.633, 0.727811, 0.633, 0);
+float GREEEN_RUBBER_SPECULAR_SHINESS = 0.078125;
 
 float MIN_DIST = 0.01;
 
 struct Object {
     float dist;
-    vec4 color;
+    vec4 ambient;
+    vec4 diffuse;
     vec4 specular;
     float specular_shiness;
 };
@@ -61,23 +76,48 @@ float torus_dist(vec3 p, vec3 center, vec2 t) {
     return length(vec2(length(p.xz)-t.x,p.y))-t.y;
 }
 
-Object y_chess_plane_object(vec3 p, float y, vec2 zhopa, vec4 color1, vec4 color2, vec4 specular, float specular_shiness) {
-    Object ret = Object(box_dist(p, vec3(0, y, 0), vec3(zhopa.x, 0, zhopa.y)), BLACK, specular, specular_shiness);
+Object y_chess_plane_object(vec3 p, float y, vec2 lengths, Object obj1, Object obj2) {
+    float dist = box_dist(p, vec3(0, y, 0), vec3(lengths.x, 0, lengths.y));
     if ((int((p.x + SCENE_MAX) / 100) + int((p.z + SCENE_MAX) / 100)) % 2 == 0) {
-        ret.color = color1;
+        obj1.dist = dist;
+        return obj1;
     } else {
-        ret.color = color2;
+        obj2.dist = dist;
+        return obj2;
     }
-    return ret;
+}
+
+Object green_ruber_object(float dist) {
+    return Object(dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, GREEEN_RUBBER_SPECULAR, GREEEN_RUBBER_SPECULAR_SHINESS);
+}
+
+Object ruby_object(float dist) {
+    return Object(dist, vec4(0.1745, 0.01175, 0.01175, 0), vec4(0.61424, 0.04136, 0.04136, 0), vec4(0.727811, 0.626959, 0.626959, 0), 0.6);
+}
+
+Object gold_object(float dist) {
+    return Object(dist, vec4(0.24725, 0.1995, 0.0745, 0.f), vec4(0.75164, 0.60648, 0.22648, 0.f), vec4(0.628281, 0.555802, 0.366065, 0.f), 0.4);
+}
+
+Object red_plastic(float dist) {
+    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.5, 0.0, 0.0, 0), vec4(0.7, 0.6, 0.6, 0), 0.25);
+}
+
+Object white_plastic(float dist) {
+    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.55, 0.55, 0.55, 0), vec4(0.70, 0.70, 0.70, 0), .25);
 }
 
 Object scene0(vec3 point) {
     Object[] scenes = Object[](
-        Object(sphere_dist(point, vec3(0, 200, 100), 100), vec4(0.2, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
-        Object(sphere_dist(point, vec3(-500, -50, 0), 300), vec4(0.4, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
-        Object(box_dist(point, vec3(400, -400, -500), vec3(100, 200, 200)), vec4(0.2, 0.4, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
-        Object(torus_dist(point, vec3(100, -400, 300), vec2(1000, 50)), vec4(0.2, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
-        y_chess_plane_object(point, -700, vec2(2000, 2000), vec4(0.2, 0.2, 0.1, 10), BLACK, NO_SPECULAR, NO_SPECULAR_SHINESS)
+        ruby_object(sphere_dist(point, vec3(0, 200, 100), 100)),
+        red_plastic(sphere_dist(point, vec3(-500, -50, 0), 300)),
+//        Object(sphere_dist(point, vec3(-500, -50, 0), 300), vec4(0.4, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
+        green_ruber_object(box_dist(point, vec3(400, -400, -500), vec3(100, 200, 200))),
+//        Object(box_dist(), vec4(0.2, 0.4, 0.2, 0), GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, GREEEN_RUBBER_SPECULAR, GREEEN_RUBBER_SPECULAR_SHINESS)
+//        Object(torus_dist(point, vec3(100, -400, 300), vec2(1000, 50)), GREY, NO_SPECULAR, NO_SPECULAR_SHINESS),
+        gold_object(torus_dist(point, vec3(100, -400, 300), vec2(1000, 50))),
+        y_chess_plane_object(point, -700, vec2(2000, 2000), white_plastic(0), red_plastic(0))
+//        y_chess_plane_object(point, -700, vec2(2000, 2000), vec4(0.2, 0.2, 0.1, 0), BLACK, NO_SPECULAR, NO_SPECULAR_SHINESS)
     );
     Object cur = scenes[0];
     for (int i = 1; i < scenes.length(); ++i) {
@@ -126,9 +166,10 @@ struct Light {
 };
 
 vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
+    vec4 ambinet_color = WHITE;
     Light[] ligths = Light[](
-        Light(QUAD_WHITE, vec3(900, 600, -200)),
-        Light(QUAD_WHITE, vec3(-500, 300, -800))
+        Light(WHITE, vec3(900, 600, -200)),
+        Light(WHITE, vec3(-500, 300, -800))
     );
     vec4 color = BLACK;
     for (int i = 0; i < ligths.length(); ++i) {
@@ -136,10 +177,13 @@ vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
         vec3 normal = estimateNormal(point);
         vec3 to_light = normalize(light.point - point);
         float scalar = dot(to_light, normal);
+        color += ambinet_color*obj.ambient;
         if (isVisible(light.point, point)) {
-            color += light.color*max(scalar, 0.f);
+            color += light.color*obj.diffuse*max(scalar, 0.f);
             vec3 reflected_light = 2*scalar*length(to_light)*normal - to_light;
-            color += obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), obj.specular_shiness);
+//            if (obj.specular != NO_SPECULAR) {
+                color += light.color*obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), 128*obj.specular_shiness);
+//            }
 //              float dist = length(light.point - point);
 //              color += 100000/(dist*dist);
         }
@@ -169,7 +213,7 @@ vec4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
     while (!isOutOfScene(cur)) {
         Object obj = cur_scene(cur);
         if (obj.dist <= MIN_DIST) {
-            color = obj.color + light_point(cur, obj, ray_dir);
+            color = light_point(cur, obj, ray_dir);
             break;
         }
         cur += obj.dist*ray_dir;
