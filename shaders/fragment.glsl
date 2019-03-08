@@ -34,37 +34,35 @@ vec4 QUAD_WHITE = vec4(0.25, 0.25, 0.25, 0);
 vec4 BLACK = vec4(0, 0, 0, 0);
 vec4 INDIGO = vec4(75.f/255,0,130.f/255,0);
 
+// Specular
+vec4 NO_SPECULAR = BLACK;
+float NO_SPECULAR_SHINESS = 0.f;
+vec4 SPECULAR_EMERALD = vec4(0.633, 0.727811, 0.633, 0);
+
 float MIN_DIST = 0.01;
 
-struct Scene {
-    float closest_dist;
+struct Object {
+    float dist;
     vec4 color;
+    vec4 specular;
+    float specular_shiness;
 };
 
-Scene sphere_scene(vec3 p, vec3 center, float radius, vec4 color) {
-    Scene ret;
-    ret.closest_dist = length(p - center) - radius;
-    ret.color = color;
-    return ret;
+float sphere_dist(vec3 p, vec3 center, float radius) {
+    return length(p - center) - radius;
 }
 
-Scene box_scene(vec3 p, vec3 center, vec3 lengths, vec4 color) {
-    Scene ret;
-    ret.closest_dist = length(max(abs(p-center)-lengths,0.0));
-    ret.color = color;
-    return ret;
+float box_dist(vec3 p, vec3 center, vec3 lengths) {
+    return length(max(abs(p-center)-lengths,0.0));
 }
 
-Scene torus_scene(vec3 p, vec3 center, vec2 t, vec4 color) {
-    p = p - center;
-    Scene ret;
-    ret.closest_dist = length(vec2(length(p.xz)-t.x,p.y))-t.y;
-    ret.color = color;
-    return ret;
+float torus_dist(vec3 p, vec3 center, vec2 t) {
+    p -= center;
+    return length(vec2(length(p.xz)-t.x,p.y))-t.y;
 }
 
-Scene y_chess_plane_scene(vec3 p, float y, vec2 zhopa, vec4 color1, vec4 color2) {
-    Scene ret = box_scene(p, vec3(0, y, 0), vec3(zhopa.x, 0, zhopa.y), BLACK);
+Object y_chess_plane_object(vec3 p, float y, vec2 zhopa, vec4 color1, vec4 color2, vec4 specular, float specular_shiness) {
+    Object ret = Object(box_dist(p, vec3(0, y, 0), vec3(zhopa.x, 0, zhopa.y)), BLACK, specular, specular_shiness);
     if ((int((p.x + SCENE_MAX) / 100) + int((p.z + SCENE_MAX) / 100)) % 2 == 0) {
         ret.color = color1;
     } else {
@@ -73,24 +71,24 @@ Scene y_chess_plane_scene(vec3 p, float y, vec2 zhopa, vec4 color1, vec4 color2)
     return ret;
 }
 
-Scene scene0(vec3 point) {
-    Scene[] scenes = Scene[](
-        sphere_scene(point, vec3(0, 200, 100), 100, vec4(0.2, 0.2, 0.2, 0)),
-        sphere_scene(point, vec3(-500, -50, 0), 300, vec4(0.4, 0.2, 0.2, 0)),
-        box_scene(point, vec3(400, -400, -500), vec3(100, 200, 200), vec4(0.2, 0.4, 0.2, 0)),
-        torus_scene(point, vec3(100, -400, 300), vec2(1000, 50), vec4(0.2, 0.2, 0.2, 0)),
-        y_chess_plane_scene(point, -700, vec2(2000, 2000), vec4(0.2, 0.2, 0.1, 10), BLACK)
+Object scene0(vec3 point) {
+    Object[] scenes = Object[](
+        Object(sphere_dist(point, vec3(0, 200, 100), 100), vec4(0.2, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
+        Object(sphere_dist(point, vec3(-500, -50, 0), 300), vec4(0.4, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
+        Object(box_dist(point, vec3(400, -400, -500), vec3(100, 200, 200)), vec4(0.2, 0.4, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
+        Object(torus_dist(point, vec3(100, -400, 300), vec2(1000, 50)), vec4(0.2, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
+        y_chess_plane_object(point, -700, vec2(2000, 2000), vec4(0.2, 0.2, 0.1, 10), BLACK, NO_SPECULAR, NO_SPECULAR_SHINESS)
     );
-    Scene cur = scenes[0];
-    for (int i = 0; i < scenes.length(); ++i) {
-        if (scenes[i].closest_dist < cur.closest_dist) {
+    Object cur = scenes[0];
+    for (int i = 1; i < scenes.length(); ++i) {
+        if (scenes[i].dist < cur.dist) {
             cur = scenes[i];
         }
     }
     return cur;
 }
 
-Scene cur_scene(vec3 point) {
+Object cur_scene(vec3 point) {
     return scene0(point);
 }
 
@@ -102,32 +100,32 @@ vec3 estimateNormal(float3 z) {
     float3 z4 = z - float3(0, eps, 0);
     float3 z5 = z + float3(0, 0, eps);
     float3 z6 = z - float3(0, 0, eps);
-    float dx = cur_scene(z1).closest_dist - cur_scene(z2).closest_dist;
-    float dy = cur_scene(z3).closest_dist - cur_scene(z4).closest_dist;
-    float dz = cur_scene(z5).closest_dist - cur_scene(z6).closest_dist;
+    float dx = cur_scene(z1).dist - cur_scene(z2).dist;
+    float dy = cur_scene(z3).dist - cur_scene(z4).dist;
+    float dz = cur_scene(z5).dist - cur_scene(z6).dist;
     return normalize(float3(dx, dy, dz) / (2.0*eps));
 }
 
 bool isVisible(vec3 from, vec3 to) {
     vec3 direction = normalize(to - from);
-    float step = min(cur_scene(from).closest_dist, length(to - from));
+    float step = min(cur_scene(from).dist, length(to - from));
     vec3 cur = from + direction*step;
 
-    step = min(cur_scene(cur).closest_dist, length(to - cur));
+    step = min(cur_scene(cur).dist, length(to - cur));
     while(step > MIN_DIST) {
         cur += direction*step;
-        step = min(cur_scene(cur).closest_dist, length(to - cur));
+        step = min(cur_scene(cur).dist, length(to - cur));
     }
 
     return length(to - cur) <= 100*MIN_DIST;
 }
 
 struct Light {
-    vec4 intensity;
+    vec4 color;
     vec3 point;
 };
 
-vec4 ligth_point_scene0(vec3 point) {
+vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
     Light[] ligths = Light[](
         Light(QUAD_WHITE, vec3(900, 600, -200)),
         Light(QUAD_WHITE, vec3(-500, 300, -800))
@@ -135,18 +133,23 @@ vec4 ligth_point_scene0(vec3 point) {
     vec4 color = BLACK;
     for (int i = 0; i < ligths.length(); ++i) {
         Light light = ligths[i];
+        vec3 normal = estimateNormal(point);
+        vec3 to_light = normalize(light.point - point);
+        float scalar = dot(to_light, normal);
         if (isVisible(light.point, point)) {
-            vec3 normal = estimateNormal(point);
-            color += light.intensity*max(dot(normalize(light.point - point), normal), 0.f);
+            color += light.color*max(scalar, 0.f);
+            vec3 reflected_light = 2*scalar*length(to_light)*normal - to_light;
+            color += obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), obj.specular_shiness);
 //              float dist = length(light.point - point);
 //              color += 100000/(dist*dist);
         }
+
     }
     return color;
 }
 
-vec4 light_point(vec3 point) {
-    return ligth_point_scene0(point);
+vec4 light_point(vec3 point, Object obj, vec3 ray_dir) {
+    return ligth_point_scene0(point, obj, ray_dir);
 }
 
 vec3 EyeRayDir(float x, float y, float w) {
@@ -164,12 +167,12 @@ vec4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
     vec3 cur = cam_pos;
     vec4 color = backgroundColor;
     while (!isOutOfScene(cur)) {
-        Scene scene = cur_scene(cur);
-        if (scene.closest_dist <= MIN_DIST) {
-            color = scene.color + light_point(cur);
+        Object obj = cur_scene(cur);
+        if (obj.dist <= MIN_DIST) {
+            color = obj.color + light_point(cur, obj, ray_dir);
             break;
         }
-        cur += scene.closest_dist*ray_dir;
+        cur += obj.dist*ray_dir;
     }
     return color;
 }
