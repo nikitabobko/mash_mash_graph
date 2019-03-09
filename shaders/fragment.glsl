@@ -194,8 +194,9 @@ vec3 estimateNormal(float3 z, int obj_id) {
     return normalize(float3(dx, dy, dz) / (2.0*eps));
 }
 
-float hui_x;
-float hui_y;
+bool isOutOfScene(vec3 point) {
+    return abs(point.x) > SCENE_MAX || abs(point.y) > SCENE_MAX || abs(point.z) > SCENE_MAX;
+}
 
 bool isVisible(vec3 from, vec3 to, int ignore_id) {
     vec3 direction = normalize(to - from);
@@ -203,12 +204,12 @@ bool isVisible(vec3 from, vec3 to, int ignore_id) {
     vec3 cur = from + direction*step;
 
     step = min(cur_scene(cur).dist, length(to - cur));
-    while(step > MIN_DIST) {
+    while(step > MIN_DIST && !isOutOfScene(cur)) {
         cur += direction*step;
         step = min(cur_scene_except(cur, ignore_id).dist, length(to - cur));
     }
 
-    return length(to - cur) <= MIN_DIST;
+    return length(to - cur) <= MIN_DIST || isOutOfScene(cur);
 }
 
 struct Light {
@@ -245,17 +246,13 @@ vec3 EyeRayDir(float x, float y, float w) {
     return normalize(cam_x*x + cam_y*y + cam_dir*(w)/tan(fov/2.0f));
 }
 
-bool isOutOfScene(vec3 point) {
-    return abs(point.x) > SCENE_MAX || abs(point.y) > SCENE_MAX || abs(point.z) > SCENE_MAX;
-}
-
 vec4 RayTrace(vec3 ray_dir, float w, float h) {
     vec3 cur = cam_pos;
     vec4 color = backgroundColor;
     int reflect_depth = 1;
     float cur_reflection = 1;
     int ignore_id = NO_ID;
-    while (reflect_depth <= 10 && !isOutOfScene(cur)) {
+    while (reflect_depth <= 2 && !isOutOfScene(cur)) {
         Object obj = cur_scene_except(cur, ignore_id);
         cur += obj.dist*ray_dir;
         if (obj.dist <= MIN_DIST) {
@@ -279,11 +276,6 @@ void main(void) {
 
     float x = fragmentTexCoord.x*w - w/2;
     float y = fragmentTexCoord.y*h - h/2;
-
-    hui_x = x;
-    hui_y = y;
-
-//    float3 ray_dir = ;
 
     float offset = 1.5;
 
