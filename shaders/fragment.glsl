@@ -50,7 +50,7 @@ vec4 EMERALD_SPECULAR = vec4(0.633, 0.727811, 0.633, 0);
 float EMERALD_SPECULAR_SHINESS = 0.6;
 
 // Specualr shiness
-float NO_SPECULAR_SHINESS = 0.f;
+float NO_SPECULAR_SHINESS = 1.f;
 float GREEEN_RUBBER_SPECULAR_SHINESS = 0.078125;
 
 int NO_ID = 0;
@@ -93,9 +93,12 @@ float ellipsoid_dist(vec3 p, vec3 center, vec3 r) {
     return (length( p/r ) - 1.0) * min(min(r.x,r.y),r.z);
 }
 
-//float dist_displace(float dist, vec3 p) {
-//    return dist + displacement(p);
-//}
+float capsule_dist(vec3 p, vec3 center, vec3 a, vec3 b, float r) {
+    p -= center;
+    vec3 pa = p - a, ba = b - a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0);
+    return length( pa - ba*h ) - r;
+}
 
 Object y_chess_plane_object(vec3 p, float y, vec2 lengths, Object obj1, Object obj2) {
     float dist = box_dist(p, vec3(0, y, 0), vec3(lengths.x, 1, lengths.y));
@@ -131,33 +134,29 @@ Object red_plastic(int id, float dist) {
 Object white_plastic(int id, float dist) {
     return Object(id, dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.55, 0.55, 0.55, 0), vec4(0.70, 0.70, 0.70, 0), .25, 1);
 }
-//
-//Object black_plastic(float dist) {
-//    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.01, 0.01, 0.01, 0), vec4(0.50, 0.50, 0.50, 0), .25);
-//}
-//
+
 Object matt_green_object(int id, float dist) {
-    return Object(id, dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, NO_SPECULAR, NO_SPECULAR_SHINESS, NO_REFLECTION);
+    return Object(id, dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, NO_SPECULAR, NO_SPECULAR_SHINESS, 0);
 }
 
 Object chrome_object(int id, float dist) {
     return Object(id, dist, vec4(0.25, 0.25, 0.25, 0), vec4(0.4, 0.4, 0.4, 0), vec4(0.774597, 0.774597, 0.774597, 0), 0.6, NO_REFLECTION);
 }
 
-//float displacement(vec3 p) {
-//    return sin(20*p.x)*sin(20*p.y)*sin(20*p.z);
-//}
-
-Object scene0(vec3 p, int ignore_id) {
+Object scene0(vec3 p, int ignore_id, int particular_id) {
     Object[] scenes = Object[](
-        ruby_object(1, sphere_dist(p, vec3(0, 200, 100), 100)),
+        ruby_object(1, sphere_dist(p, vec3(500, -200, -100), 100)),
         matt_green_object(2, sphere_dist(p, vec3(-500, -50, 0), 300)),
         red_plastic(3, box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
         gold_object(4, torus_dist(p, vec3(100, -400, 300), vec2(1000, 50))),
         y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(5, 0), red_plastic(5, 0)),
         emerald_object(6, triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
-        chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100)))
+        chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100))),
+        matt_green_object(8, capsule_dist(p, vec3(100, -500, -1000), vec3(1, 2, 10), vec3(500, 200, 10), 100))
     );
+    if (particular_id != NO_ID) {
+        return scenes[particular_id - 1];
+    }
     Object cur = scenes[0];
     bool initialized = false;
     for (int i = 0; i < scenes.length(); ++i) {
@@ -170,14 +169,18 @@ Object scene0(vec3 p, int ignore_id) {
 }
 
 Object cur_scene(vec3 point) {
-    return scene0(point, NO_ID);
+    return scene0(point, NO_ID, NO_ID);
 }
 
 Object cur_scene_except(vec3 p, int ignore_id) {
-    return scene0(p, ignore_id);
+    return scene0(p, ignore_id, NO_ID);
 }
 
-vec3 estimateNormal(float3 z) {
+Object cur_scene_wiht_obj(vec3 p, int obj_id) {
+    return scene0(p, NO_ID, obj_id);
+}
+
+vec3 estimateNormal(float3 z, int obj_id) {
     float eps = 0.001;
     float3 z1 = z + float3(eps, 0, 0);
     float3 z2 = z - float3(eps, 0, 0);
@@ -185,9 +188,9 @@ vec3 estimateNormal(float3 z) {
     float3 z4 = z - float3(0, eps, 0);
     float3 z5 = z + float3(0, 0, eps);
     float3 z6 = z - float3(0, 0, eps);
-    float dx = cur_scene(z1).dist - cur_scene(z2).dist;
-    float dy = cur_scene(z3).dist - cur_scene(z4).dist;
-    float dz = cur_scene(z5).dist - cur_scene(z6).dist;
+    float dx = cur_scene_wiht_obj(z1, obj_id).dist - cur_scene_wiht_obj(z2, obj_id).dist;
+    float dy = cur_scene_wiht_obj(z3, obj_id).dist - cur_scene_wiht_obj(z4, obj_id).dist;
+    float dz = cur_scene_wiht_obj(z5, obj_id).dist - cur_scene_wiht_obj(z6, obj_id).dist;
     return normalize(float3(dx, dy, dz) / (2.0*eps));
 }
 
@@ -225,25 +228,15 @@ vec4 light_point(vec3 point, Object obj, vec3 ray_dir, vec3 normal) {
         Light light = ligths[i];
         color += ambinet_color*obj.ambient;
         if (isVisible(light.point, point, obj.id)) {
-//            vec3 normal = estimateNormal(point);
             vec3 to_light = normalize(light.point - point);
             float scalar = dot(to_light, normal);
             color += light.color*obj.diffuse*max(scalar, 0.f);
             vec3 reflected_light = 2*scalar*normal - to_light;
-            if (obj.specular != NO_SPECULAR) {
-                color += light.color*obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), 128*obj.specular_shiness);
-            }
-//              float dist = length(light.point - point);
-//              color += 100000/(dist*dist);
+            color += light.color*obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), 128*obj.specular_shiness);
         }
-
     }
     return color;
 }
-
-//vec4 light_point(vec3 point, Object obj, vec3 ray_dir) {
-//    return ligth_point_scene0(point, obj, ray_dir);
-//}
 
 vec3 EyeRayDir(float x, float y, float w) {
     float fov = 3.141592654f/(2.0f);
@@ -259,16 +252,15 @@ bool isOutOfScene(vec3 point) {
 vec4 RayTrace(vec3 ray_dir, float w, float h) {
     vec3 cur = cam_pos;
     vec4 color = backgroundColor;
-//    while (!isOutOfScene(cur)) {
     int reflect_depth = 1;
     float cur_reflection = 1;
     int ignore_id = NO_ID;
-    while (reflect_depth <= 3 && !isOutOfScene(cur)) {
+    while (reflect_depth <= 10 && !isOutOfScene(cur)) {
         Object obj = cur_scene_except(cur, ignore_id);
         cur += obj.dist*ray_dir;
         if (obj.dist <= MIN_DIST) {
-            vec3 normal = estimateNormal(cur);
-            color += cur_reflection*light_point(cur, obj, ray_dir, normal)/reflect_depth/reflect_depth;
+            vec3 normal = estimateNormal(cur, obj.id);
+            color += cur_reflection*light_point(cur, obj, ray_dir, normal)/reflect_depth;//reflect_depth;
             if (obj.reflection == 0) {
                 break;
             }
@@ -291,7 +283,20 @@ void main(void) {
     hui_x = x;
     hui_y = y;
 
-    float3 ray_dir = EyeRayDir(x,y, w);
+//    float3 ray_dir = ;
+
+    float offset = 1.5;
+
+//    fragColor = 0.5*RayTrace(EyeRayDir(x, y, w), w, h) +
+//                0.125*RayTrace(EyeRayDir((x + offset)/2, y/2, w/2), w/2, h/2) +
+//                0.125*RayTrace(EyeRayDir(x/2, (y + offset)/2, w/2), w/2, h/2) +
+//                0.125*RayTrace(EyeRayDir((x - offset)/2, y/2, w/2), w/2, h/2) +
+//                0.125*RayTrace(EyeRayDir(x/2, (y - offset)/2, w/2), w/2, h/2);
+
+//    fragColor = (RayTrace(EyeRayDir(x, y, w), w, h) +
+//                RayTrace(EyeRayDir(x/5, y/5, w/5), w/5, h/5))/2;
+
+    vec3 ray_dir = EyeRayDir(x, y, w);
 
     fragColor = RayTrace(ray_dir, w, h);
 }
