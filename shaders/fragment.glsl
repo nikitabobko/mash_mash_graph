@@ -53,14 +53,20 @@ float EMERALD_SPECULAR_SHINESS = 0.6;
 float NO_SPECULAR_SHINESS = 0.f;
 float GREEEN_RUBBER_SPECULAR_SHINESS = 0.078125;
 
-float MIN_DIST = 0.01;
+int NO_ID = 0;
+
+float NO_REFLECTION = 0;
+
+float MIN_DIST = 0.2;
 
 struct Object {
+    int id;
     float dist;
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
     float specular_shiness;
+    float reflection;
 };
 
 float sphere_dist(vec3 p, vec3 center, float radius) {
@@ -91,9 +97,8 @@ float ellipsoid_dist(vec3 p, vec3 center, vec3 r) {
 //    return dist + displacement(p);
 //}
 
-
 Object y_chess_plane_object(vec3 p, float y, vec2 lengths, Object obj1, Object obj2) {
-    float dist = box_dist(p, vec3(0, y, 0), vec3(lengths.x, 0, lengths.y));
+    float dist = box_dist(p, vec3(0, y, 0), vec3(lengths.x, 1, lengths.y));
     if ((int((p.x + SCENE_MAX) / 100) + int((p.z + SCENE_MAX) / 100)) % 2 == 0) {
         obj1.dist = dist;
         return obj1;
@@ -103,67 +108,73 @@ Object y_chess_plane_object(vec3 p, float y, vec2 lengths, Object obj1, Object o
     }
 }
 
-Object emerald_object(float dist) {
-    return Object(dist, vec4(0.0215, 0.1745, 0.0215, 0), vec4(0.07568, 0.61424, 0.07568, 0), vec4(0.633, 0.727811, 0.633, 0), 0.6);
+Object emerald_object(int id, float dist) {
+    return Object(id, dist, vec4(0.0215, 0.1745, 0.0215, 0), vec4(0.07568, 0.61424, 0.07568, 0), vec4(0.633, 0.727811, 0.633, 0), 0.6, NO_REFLECTION);
 }
 
-Object green_ruber_object(float dist) {
-    return Object(dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, GREEEN_RUBBER_SPECULAR, GREEEN_RUBBER_SPECULAR_SHINESS);
+Object green_ruber_object(int id, float dist) {
+    return Object(id, dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, GREEEN_RUBBER_SPECULAR, GREEEN_RUBBER_SPECULAR_SHINESS, NO_REFLECTION);
 }
 
-Object ruby_object(float dist) {
-    return Object(dist, vec4(0.1745, 0.01175, 0.01175, 0), vec4(0.61424, 0.04136, 0.04136, 0), vec4(0.727811, 0.626959, 0.626959, 0), 0.6);
+Object ruby_object(int id, float dist) {
+    return Object(id, dist, vec4(0.1745, 0.01175, 0.01175, 0), vec4(0.61424, 0.04136, 0.04136, 0), vec4(0.727811, 0.626959, 0.626959, 0), 0.6, 0.5);
 }
 
-Object gold_object(float dist) {
-    return Object(dist, vec4(0.24725, 0.1995, 0.0745, 0.f), vec4(0.75164, 0.60648, 0.22648, 0.f), vec4(0.628281, 0.555802, 0.366065, 0.f), 0.4);
+Object gold_object(int id, float dist) {
+    return Object(id, dist, vec4(0.24725, 0.1995, 0.0745, 0.f), vec4(0.75164, 0.60648, 0.22648, 0.f), vec4(0.628281, 0.555802, 0.366065, 0.f), 0.4, NO_REFLECTION);
 }
 
-Object red_plastic(float dist) {
-    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.5, 0.0, 0.0, 0), vec4(0.7, 0.6, 0.6, 0), 0.25);
+Object red_plastic(int id, float dist) {
+    return Object(id, dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.5, 0.0, 0.0, 0), vec4(0.7, 0.6, 0.6, 0), 0.25, 1);
 }
 
-Object white_plastic(float dist) {
-    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.55, 0.55, 0.55, 0), vec4(0.70, 0.70, 0.70, 0), .25);
+Object white_plastic(int id, float dist) {
+    return Object(id, dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.55, 0.55, 0.55, 0), vec4(0.70, 0.70, 0.70, 0), .25, 1);
+}
+//
+//Object black_plastic(float dist) {
+//    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.01, 0.01, 0.01, 0), vec4(0.50, 0.50, 0.50, 0), .25);
+//}
+//
+Object matt_green_object(int id, float dist) {
+    return Object(id, dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, NO_SPECULAR, NO_SPECULAR_SHINESS, NO_REFLECTION);
 }
 
-Object black_plastic(float dist) {
-    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.01, 0.01, 0.01, 0), vec4(0.50, 0.50, 0.50, 0), .25);
-}
-
-Object matt_green_object(float dist) {
-    return Object(dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, NO_SPECULAR, NO_SPECULAR_SHINESS);
-}
-
-Object chrome_object(float dist) {
-    return Object(dist, vec4(0.25, 0.25, 0.25, 0), vec4(0.4, 0.4, 0.4, 0), vec4(0.774597, 0.774597, 0.774597, 0), 0.6);
+Object chrome_object(int id, float dist) {
+    return Object(id, dist, vec4(0.25, 0.25, 0.25, 0), vec4(0.4, 0.4, 0.4, 0), vec4(0.774597, 0.774597, 0.774597, 0), 0.6, NO_REFLECTION);
 }
 
 //float displacement(vec3 p) {
 //    return sin(20*p.x)*sin(20*p.y)*sin(20*p.z);
 //}
 
-Object scene0(vec3 p) {
+Object scene0(vec3 p, int ignore_id) {
     Object[] scenes = Object[](
-        ruby_object(sphere_dist(p, vec3(0, 200, 100), 100)),
-        matt_green_object(sphere_dist(p, vec3(-500, -50, 0), 300)),
-        red_plastic(box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
-        gold_object(torus_dist(p, vec3(100, -400, 300), vec2(1000, 50))),
-        y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(0), red_plastic(0)),
-        emerald_object(triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
-        chrome_object(ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100)))
+        ruby_object(1, sphere_dist(p, vec3(0, 200, 100), 100)),
+        matt_green_object(2, sphere_dist(p, vec3(-500, -50, 0), 300)),
+        red_plastic(3, box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
+        gold_object(4, torus_dist(p, vec3(100, -400, 300), vec2(1000, 50))),
+        y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(5, 0), red_plastic(5, 0)),
+        emerald_object(6, triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
+        chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100)))
     );
     Object cur = scenes[0];
-    for (int i = 1; i < scenes.length(); ++i) {
-        if (scenes[i].dist < cur.dist) {
+    bool initialized = false;
+    for (int i = 0; i < scenes.length(); ++i) {
+        if (scenes[i].id != ignore_id && (!initialized || scenes[i].dist < cur.dist)) {
             cur = scenes[i];
+            initialized = true;
         }
     }
     return cur;
 }
 
 Object cur_scene(vec3 point) {
-    return scene0(point);
+    return scene0(point, NO_ID);
+}
+
+Object cur_scene_except(vec3 p, int ignore_id) {
+    return scene0(p, ignore_id);
 }
 
 vec3 estimateNormal(float3 z) {
@@ -180,7 +191,10 @@ vec3 estimateNormal(float3 z) {
     return normalize(float3(dx, dy, dz) / (2.0*eps));
 }
 
-bool isVisible(vec3 from, vec3 to) {
+float hui_x;
+float hui_y;
+
+bool isVisible(vec3 from, vec3 to, int ignore_id) {
     vec3 direction = normalize(to - from);
     float step = min(cur_scene(from).dist, length(to - from));
     vec3 cur = from + direction*step;
@@ -188,10 +202,10 @@ bool isVisible(vec3 from, vec3 to) {
     step = min(cur_scene(cur).dist, length(to - cur));
     while(step > MIN_DIST) {
         cur += direction*step;
-        step = min(cur_scene(cur).dist, length(to - cur));
+        step = min(cur_scene_except(cur, ignore_id).dist, length(to - cur));
     }
 
-    return length(to - cur) <= 100*MIN_DIST;
+    return length(to - cur) <= MIN_DIST;
 }
 
 struct Light {
@@ -199,7 +213,7 @@ struct Light {
     vec3 point;
 };
 
-vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
+vec4 light_point(vec3 point, Object obj, vec3 ray_dir, vec3 normal) {
     vec4 ambinet_color = WHITE;
     Light[] ligths = Light[](
         Light(WHITE, vec3(900, 600, -200)),
@@ -209,13 +223,13 @@ vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
     vec4 color = BLACK;
     for (int i = 0; i < ligths.length(); ++i) {
         Light light = ligths[i];
-        vec3 normal = estimateNormal(point);
-        vec3 to_light = normalize(light.point - point);
-        float scalar = dot(to_light, normal);
         color += ambinet_color*obj.ambient;
-        if (isVisible(light.point, point)) {
+        if (isVisible(light.point, point, obj.id)) {
+//            vec3 normal = estimateNormal(point);
+            vec3 to_light = normalize(light.point - point);
+            float scalar = dot(to_light, normal);
             color += light.color*obj.diffuse*max(scalar, 0.f);
-            vec3 reflected_light = 2*scalar*length(to_light)*normal - to_light;
+            vec3 reflected_light = 2*scalar*normal - to_light;
             if (obj.specular != NO_SPECULAR) {
                 color += light.color*obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), 128*obj.specular_shiness);
             }
@@ -227,9 +241,9 @@ vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
     return color;
 }
 
-vec4 light_point(vec3 point, Object obj, vec3 ray_dir) {
-    return ligth_point_scene0(point, obj, ray_dir);
-}
+//vec4 light_point(vec3 point, Object obj, vec3 ray_dir) {
+//    return ligth_point_scene0(point, obj, ray_dir);
+//}
 
 vec3 EyeRayDir(float x, float y, float w) {
     float fov = 3.141592654f/(2.0f);
@@ -242,16 +256,27 @@ bool isOutOfScene(vec3 point) {
     return abs(point.x) > SCENE_MAX || abs(point.y) > SCENE_MAX || abs(point.z) > SCENE_MAX;
 }
 
-vec4 RayTrace(float x, float y, vec3 ray_dir, float w, float h) {
+vec4 RayTrace(vec3 ray_dir, float w, float h) {
     vec3 cur = cam_pos;
     vec4 color = backgroundColor;
-    while (!isOutOfScene(cur)) {
-        Object obj = cur_scene(cur);
-        if (obj.dist <= MIN_DIST) {
-            color = light_point(cur, obj, ray_dir);
-            break;
-        }
+//    while (!isOutOfScene(cur)) {
+    int reflect_depth = 1;
+    float cur_reflection = 1;
+    int ignore_id = NO_ID;
+    while (reflect_depth <= 3 && !isOutOfScene(cur)) {
+        Object obj = cur_scene_except(cur, ignore_id);
         cur += obj.dist*ray_dir;
+        if (obj.dist <= MIN_DIST) {
+            vec3 normal = estimateNormal(cur);
+            color += cur_reflection*light_point(cur, obj, ray_dir, normal)/reflect_depth/reflect_depth;
+            if (obj.reflection == 0) {
+                break;
+            }
+            cur_reflection = obj.reflection;
+            ray_dir = 2*dot(normal, -ray_dir)*normal + ray_dir;
+            ignore_id = obj.id;
+            reflect_depth++;
+        }
     }
     return color;
 }
@@ -263,7 +288,10 @@ void main(void) {
     float x = fragmentTexCoord.x*w - w/2;
     float y = fragmentTexCoord.y*h - h/2;
 
+    hui_x = x;
+    hui_y = y;
+
     float3 ray_dir = EyeRayDir(x,y, w);
 
-    fragColor = RayTrace(x, y, ray_dir, w, h);
+    fragColor = RayTrace(ray_dir, w, h);
 }
