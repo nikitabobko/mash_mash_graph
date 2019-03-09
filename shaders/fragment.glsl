@@ -100,6 +100,55 @@ float capsule_dist(vec3 p, vec3 center, vec3 a, vec3 b, float r) {
     return length( pa - ba*h ) - r;
 }
 
+//float map(vec3 p) {
+//    float d = box_dist(p, vec3(0, 0, 0), vec3(20.0));
+//    vec4 res = vec4( d, 20.0, 0.0, 0.0);
+//
+//    float s = 20.0;
+//    for( int m=0; m<3; m++ )
+//    {
+//        vec3 a = mod( p*s, 40.0 )-20.0;
+//        s *= 60.0;
+//        vec3 r = abs(20.0 - 60.0*abs(a));
+//
+//        float da = max(r.x,r.y);
+//        float db = max(r.y,r.z);
+//        float dc = max(r.z,r.x);
+//        float c = (min(da,min(db,dc))-20.0)/s;
+//
+//        if( c>d )
+//        {
+//            d = c;
+//            res = vec4( d, 4*da*db*dc, (20.0+float(m))/80.0, 0.0 );
+//        }
+//    }
+//
+//    return res.x;
+//}
+
+float DE(vec3 z)
+{
+    float Scale = 2;
+    float hey = 1000;
+    vec3 a1 = vec3(hey,hey,hey);
+    vec3 a2 = vec3(-hey,-hey,hey);
+    vec3 a3 = vec3(hey,-hey,-hey);
+    vec3 a4 = vec3(-hey,hey,-hey);
+    vec3 c;
+    int n = 0;
+    float dist, d;
+    while (n < 20) {
+        c = a1; dist = length(z-a1);
+        d = length(z-a2); if (d < dist) { c = a2; dist=d; }
+        d = length(z-a3); if (d < dist) { c = a3; dist=d; }
+        d = length(z-a4); if (d < dist) { c = a4; dist=d; }
+        z = Scale*z-c*(Scale-1.0);
+        n++;
+    }
+
+    return length(z) * pow(Scale, float(-n));
+}
+
 Object y_chess_plane_object(vec3 p, float y, vec2 lengths, Object obj1, Object obj2) {
     float dist = box_dist(p, vec3(0, y, 0), vec3(lengths.x, 1, lengths.y));
     if ((int((p.x + SCENE_MAX) / 100) + int((p.z + SCENE_MAX) / 100)) % 2 == 0) {
@@ -145,14 +194,15 @@ Object chrome_object(int id, float dist) {
 
 Object scene0(vec3 p, int ignore_id, int particular_id) {
     Object[] scenes = Object[](
-        ruby_object(1, sphere_dist(p, vec3(500, -200, -100), 100)),
-        matt_green_object(2, sphere_dist(p, vec3(-500, -50, 0), 300)),
-        red_plastic(3, box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
-        gold_object(4, torus_dist(p, vec3(100, -400, 300), vec2(1000, 50))),
-        y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(5, 0), red_plastic(5, 0)),
-        emerald_object(6, triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
-        chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100))),
-        matt_green_object(8, capsule_dist(p, vec3(100, -500, -1000), vec3(1, 2, 10), vec3(500, 200, 10), 100))
+        matt_green_object(1, DE(p))
+//        ruby_object(1, sphere_dist(p, vec3(500, -200, -100), 100)),
+//        matt_green_object(2, sphere_dist(p, vec3(-500, -50, 0), 300)),
+//        red_plastic(3, box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
+//        gold_object(4, torus_dist(p, vec3(100, -400, 300), vec2(1000, 50))),
+//        y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(5, 0), red_plastic(5, 0)),
+//        emerald_object(6, triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
+//        chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100))),
+//        matt_green_object(8, capsule_dist(p, vec3(100, -500, -1000), vec3(1, 2, 10), vec3(500, 200, 10), 100))
     );
     if (particular_id != NO_ID) {
         return scenes[particular_id - 1];
