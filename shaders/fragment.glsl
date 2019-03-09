@@ -76,6 +76,22 @@ float torus_dist(vec3 p, vec3 center, vec2 t) {
     return length(vec2(length(p.xz)-t.x,p.y))-t.y;
 }
 
+float triangular_prism_dist(vec3 p, vec3 center, vec2 h) {
+    p -= center;
+    vec3 q = abs(p);
+    return max(q.z-h.y,max(q.x*0.866025+p.y*0.5,-p.y)-h.x*0.5);
+}
+
+float ellipsoid_dist(vec3 p, vec3 center, vec3 r) {
+    p -= center;
+    return (length( p/r ) - 1.0) * min(min(r.x,r.y),r.z);
+}
+
+//float dist_displace(float dist, vec3 p) {
+//    return dist + displacement(p);
+//}
+
+
 Object y_chess_plane_object(vec3 p, float y, vec2 lengths, Object obj1, Object obj2) {
     float dist = box_dist(p, vec3(0, y, 0), vec3(lengths.x, 0, lengths.y));
     if ((int((p.x + SCENE_MAX) / 100) + int((p.z + SCENE_MAX) / 100)) % 2 == 0) {
@@ -85,6 +101,10 @@ Object y_chess_plane_object(vec3 p, float y, vec2 lengths, Object obj1, Object o
         obj2.dist = dist;
         return obj2;
     }
+}
+
+Object emerald_object(float dist) {
+    return Object(dist, vec4(0.0215, 0.1745, 0.0215, 0), vec4(0.07568, 0.61424, 0.07568, 0), vec4(0.633, 0.727811, 0.633, 0), 0.6);
 }
 
 Object green_ruber_object(float dist) {
@@ -107,17 +127,31 @@ Object white_plastic(float dist) {
     return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.55, 0.55, 0.55, 0), vec4(0.70, 0.70, 0.70, 0), .25);
 }
 
-Object scene0(vec3 point) {
+Object black_plastic(float dist) {
+    return Object(dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.01, 0.01, 0.01, 0), vec4(0.50, 0.50, 0.50, 0), .25);
+}
+
+Object matt_green_object(float dist) {
+    return Object(dist, GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, NO_SPECULAR, NO_SPECULAR_SHINESS);
+}
+
+Object chrome_object(float dist) {
+    return Object(dist, vec4(0.25, 0.25, 0.25, 0), vec4(0.4, 0.4, 0.4, 0), vec4(0.774597, 0.774597, 0.774597, 0), 0.6);
+}
+
+//float displacement(vec3 p) {
+//    return sin(20*p.x)*sin(20*p.y)*sin(20*p.z);
+//}
+
+Object scene0(vec3 p) {
     Object[] scenes = Object[](
-        ruby_object(sphere_dist(point, vec3(0, 200, 100), 100)),
-        red_plastic(sphere_dist(point, vec3(-500, -50, 0), 300)),
-//        Object(sphere_dist(point, vec3(-500, -50, 0), 300), vec4(0.4, 0.2, 0.2, 0), NO_SPECULAR, NO_SPECULAR_SHINESS),
-        green_ruber_object(box_dist(point, vec3(400, -400, -500), vec3(100, 200, 200))),
-//        Object(box_dist(), vec4(0.2, 0.4, 0.2, 0), GREEEN_RUBBER_AMBIENT, GREEEN_RUBBER_DIFFUSE, GREEEN_RUBBER_SPECULAR, GREEEN_RUBBER_SPECULAR_SHINESS)
-//        Object(torus_dist(point, vec3(100, -400, 300), vec2(1000, 50)), GREY, NO_SPECULAR, NO_SPECULAR_SHINESS),
-        gold_object(torus_dist(point, vec3(100, -400, 300), vec2(1000, 50))),
-        y_chess_plane_object(point, -700, vec2(2000, 2000), white_plastic(0), red_plastic(0))
-//        y_chess_plane_object(point, -700, vec2(2000, 2000), vec4(0.2, 0.2, 0.1, 0), BLACK, NO_SPECULAR, NO_SPECULAR_SHINESS)
+        ruby_object(sphere_dist(p, vec3(0, 200, 100), 100)),
+        matt_green_object(sphere_dist(p, vec3(-500, -50, 0), 300)),
+        red_plastic(box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
+        gold_object(torus_dist(p, vec3(100, -400, 300), vec2(1000, 50))),
+        y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(0), red_plastic(0)),
+        emerald_object(triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
+        chrome_object(ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100)))
     );
     Object cur = scenes[0];
     for (int i = 1; i < scenes.length(); ++i) {
@@ -169,7 +203,8 @@ vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
     vec4 ambinet_color = WHITE;
     Light[] ligths = Light[](
         Light(WHITE, vec3(900, 600, -200)),
-        Light(WHITE, vec3(-500, 300, -800))
+        Light(WHITE, vec3(-500, 300, -800)),
+        Light(WHITE, vec3(0, -2000, 0))
     );
     vec4 color = BLACK;
     for (int i = 0; i < ligths.length(); ++i) {
@@ -181,9 +216,9 @@ vec4 ligth_point_scene0(vec3 point, Object obj, vec3 ray_dir) {
         if (isVisible(light.point, point)) {
             color += light.color*obj.diffuse*max(scalar, 0.f);
             vec3 reflected_light = 2*scalar*length(to_light)*normal - to_light;
-//            if (obj.specular != NO_SPECULAR) {
+            if (obj.specular != NO_SPECULAR) {
                 color += light.color*obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), 128*obj.specular_shiness);
-//            }
+            }
 //              float dist = length(light.point - point);
 //              color += 100000/(dist*dist);
         }
