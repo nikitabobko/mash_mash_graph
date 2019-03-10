@@ -13,7 +13,6 @@ layout(location = 0) out vec4 fragColor;
 uniform int g_screenWidth;
 uniform int g_screenHeight;
 uniform int scene_id;
-uniform int antialiasing;
 
 int SCENE_MAX = 10000;
 
@@ -362,18 +361,5 @@ void main(void) {
     float x = fragmentTexCoord.x*w - w/2;
     float y = fragmentTexCoord.y*h - h/2;
 
-    if (antialiasing == 1) {
-        float offset = 0.4;
-        fragColor = (RayTrace(EyeRayDir(x, y, w), w, h) +
-                     RayTrace(EyeRayDir(x + offset, y, w), w, h) +
-                     RayTrace(EyeRayDir(x + offset, y + offset, w), w, h) +
-                     RayTrace(EyeRayDir(x + offset, y - offset, w), w, h) +
-                     RayTrace(EyeRayDir(x - offset, y - offset, w), w, h) +
-                     RayTrace(EyeRayDir(x - offset, y + offset, w), w, h) +
-                     RayTrace(EyeRayDir(x, y + offset, w), w, h) +
-                     RayTrace(EyeRayDir(x - offset, y, w), w, h) +
-                     RayTrace(EyeRayDir(x, y - offset, w), w, h))/9;
-    } else {
-        fragColor = RayTrace(EyeRayDir(x, y, w), w, h);
-    }
+    fragColor = RayTrace(EyeRayDir(x, y, w), w, h);
 }

@@ -53,8 +53,6 @@ float3 cam_pos = get_default_cam_pos();
 double along_yz_rot = get_default_along_yz_rot();
 double along_xz_rot = get_default_along_xz_rot();
 
-int antialiasing = 0;
-
 const float DEFAULT_MOVE_SPEED = 20.0f;
 
 const float MULT_SPEED = 3.f;
@@ -112,8 +110,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         } else if (key == GLFW_KEY_2) {
             scene_id = 1;
             reset_pos();
-        } else if (key == GLFW_KEY_3) {
-            antialiasing = !antialiasing;
         }
     } else if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_W) {
@@ -282,7 +278,7 @@ int main(int argc, char **argv) {
     //цикл обработки сообщений и отрисовки сцены каждый кадр
     while (!glfwWindowShouldClose(window)) {
         char title_buf[2048];
-        snprintf(title_buf, sizeof(title_buf), "OpenGL ray marching sample. antialiasing: %s. scene_id: %d", antialiasing ? "on" : "off", scene_id);
+        snprintf(title_buf, sizeof(title_buf), "OpenGL ray marching sample. Scene_id: %d", scene_id);
 
         glfwPollEvents();
 
@@ -337,7 +333,6 @@ int main(int argc, char **argv) {
         program.SetUniform("cam_x", cam_x);
         program.SetUniform("cam_y", cam_y);
         program.SetUniform("scene_id", scene_id);
-        program.SetUniform("antialiasing", antialiasing);
 
         // очистка и заполнение экрана цветом
         glViewport(0, 0, WIDTH, HEIGHT);
