@@ -167,6 +167,39 @@ Object chrome_object(int id, float dist) {
     return Object(id, dist, vec4(0.25, 0.25, 0.25, 0), vec4(0.4, 0.4, 0.4, 0), vec4(0.774597, 0.774597, 0.774597, 0), 0.6, NO_REFLECTION);
 }
 
+Object matt_white_plastic(int id, float dist) {
+    return Object(id, dist, vec4(0.0, 0.0, 0.0, 0), vec4(0.55, 0.55, 0.55, 0), NO_SPECULAR, NO_SPECULAR_SHINESS, NO_REFLECTION);
+}
+
+float round_box_dist(vec3 p, vec3 b, float r) {
+    return length(max(abs(p)-b,0.0))-r;
+}
+
+float cylinder_dist(vec3 p, vec2 h) {
+    vec2 d = abs(vec2(length(p.xz),p.y)) - h;
+    return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+
+float bin_dist(vec3 p, vec3 center) {
+    p -= center;
+    float M_PI_2 = 3.1415 / 2;
+    mat3 rotate = mat3(1, 0, 0,
+                       0, cos(M_PI_2), -sin(M_PI_2),
+                       0, sin(M_PI_2), cos(M_PI_2));
+    float out_cylinder = cylinder_dist(p, vec2(100, 150));
+    float in_cylinder = cylinder_dist(p - vec3(0, 20, 0), vec2(90, 150));
+    float a = max(-out_cylinder, torus_dist(rotate*(p - vec3(0, 180, 0)), vec3(0, 0, 0), vec2(110, 10)));
+    return min(a, max(-in_cylinder, out_cylinder));
+}
+
+float ladle(vec3 p, vec3 center) {
+    p -= center;
+    float a = max(-round_box_dist(p - vec3(0, 50, 0), vec3(90, 90, 90), 10), round_box_dist(p, vec3(100, 100, 100), 10));
+    a = min(a, round_box_dist(p - vec3(210, 30, 0), vec3(100, 15, 15), 10));
+    return a;
+}
+
 Object scene0(vec3 p, int ignore_id, int particular_id) {
     Object[] scenes = Object[](
         ruby_object(1, sphere_dist(p, vec3(500, -200, -100), 100)),
@@ -176,7 +209,9 @@ Object scene0(vec3 p, int ignore_id, int particular_id) {
         y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(5, 0), red_plastic(5, 0)),
         emerald_object(6, triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
         chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100))),
-        matt_green_object(8, capsule_dist(p, vec3(100, -500, -1000), vec3(1, 2, 10), vec3(500, 200, 10), 100))
+        matt_green_object(8, capsule_dist(p, vec3(100, -500, -1000), vec3(1, 2, 10), vec3(500, 200, 10), 100)),
+        matt_white_plastic(9, ladle(p, vec3(-1000, -500, -1000))),
+        matt_white_plastic(10, bin_dist(p, vec3(-1000, -500, -500)))
     );
     if (particular_id != NO_ID) {
         return scenes[particular_id - 1];

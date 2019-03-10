@@ -53,7 +53,7 @@ float3 cam_pos = get_default_cam_pos();
 double along_yz_rot = get_default_along_yz_rot();
 double along_xz_rot = get_default_along_xz_rot();
 
-const float DEFAULT_MOVE_SPEED = 20.0f;
+const float DEFAULT_MOVE_SPEED = 40.0f;
 
 const float MULT_SPEED = 3.f;
 
