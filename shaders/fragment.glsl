@@ -12,6 +12,8 @@ layout(location = 0) out vec4 fragColor;
 
 uniform int g_screenWidth;
 uniform int g_screenHeight;
+uniform int scene_id;
+uniform int antialiasing;
 
 int SCENE_MAX = 10000;
 
@@ -100,44 +102,18 @@ float capsule_dist(vec3 p, vec3 center, vec3 a, vec3 b, float r) {
     return length( pa - ba*h ) - r;
 }
 
-//float map(vec3 p) {
-//    float d = box_dist(p, vec3(0, 0, 0), vec3(20.0));
-//    vec4 res = vec4( d, 20.0, 0.0, 0.0);
-//
-//    float s = 20.0;
-//    for( int m=0; m<3; m++ )
-//    {
-//        vec3 a = mod( p*s, 40.0 )-20.0;
-//        s *= 60.0;
-//        vec3 r = abs(20.0 - 60.0*abs(a));
-//
-//        float da = max(r.x,r.y);
-//        float db = max(r.y,r.z);
-//        float dc = max(r.z,r.x);
-//        float c = (min(da,min(db,dc))-20.0)/s;
-//
-//        if( c>d )
-//        {
-//            d = c;
-//            res = vec4( d, 4*da*db*dc, (20.0+float(m))/80.0, 0.0 );
-//        }
-//    }
-//
-//    return res.x;
-//}
-
-float DE(vec3 z)
-{
+float triangle_fractal_dist(vec3 z, vec3 center) {
+    z -= center;
     float Scale = 2;
-    float hey = 1000;
-    vec3 a1 = vec3(hey,hey,hey);
-    vec3 a2 = vec3(-hey,-hey,hey);
-    vec3 a3 = vec3(hey,-hey,-hey);
-    vec3 a4 = vec3(-hey,hey,-hey);
+    float some_coeff = 50;
+    vec3 a1 = vec3(some_coeff,some_coeff,some_coeff);
+    vec3 a2 = vec3(-some_coeff,-some_coeff,some_coeff);
+    vec3 a3 = vec3(some_coeff,-some_coeff,-some_coeff);
+    vec3 a4 = vec3(-some_coeff,some_coeff,-some_coeff);
     vec3 c;
     int n = 0;
     float dist, d;
-    while (n < 20) {
+    while (n < 10) {
         c = a1; dist = length(z-a1);
         d = length(z-a2); if (d < dist) { c = a2; dist=d; }
         d = length(z-a3); if (d < dist) { c = a3; dist=d; }
@@ -194,15 +170,33 @@ Object chrome_object(int id, float dist) {
 
 Object scene0(vec3 p, int ignore_id, int particular_id) {
     Object[] scenes = Object[](
-        matt_green_object(1, DE(p))
-//        ruby_object(1, sphere_dist(p, vec3(500, -200, -100), 100)),
-//        matt_green_object(2, sphere_dist(p, vec3(-500, -50, 0), 300)),
-//        red_plastic(3, box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
-//        gold_object(4, torus_dist(p, vec3(100, -400, 300), vec2(1000, 50))),
-//        y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(5, 0), red_plastic(5, 0)),
-//        emerald_object(6, triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
-//        chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100))),
-//        matt_green_object(8, capsule_dist(p, vec3(100, -500, -1000), vec3(1, 2, 10), vec3(500, 200, 10), 100))
+        ruby_object(1, sphere_dist(p, vec3(500, -200, -100), 100)),
+        matt_green_object(2, sphere_dist(p, vec3(-500, -50, 0), 300)),
+        red_plastic(3, box_dist(p, vec3(400, -400, -500), vec3(100, 200, 200))),
+        gold_object(4, torus_dist(p, vec3(100, -400, 300), vec2(500, 50))),
+        y_chess_plane_object(p, -700, vec2(2000, 2000), white_plastic(5, 0), red_plastic(5, 0)),
+        emerald_object(6, triangular_prism_dist(p, vec3(0, -500, 200), vec2(300, 100))),
+        chrome_object(7, ellipsoid_dist(p, vec3(-500, 200, -600), vec3(100, 200, 100))),
+        matt_green_object(8, capsule_dist(p, vec3(100, -500, -1000), vec3(1, 2, 10), vec3(500, 200, 10), 100))
+    );
+    if (particular_id != NO_ID) {
+        return scenes[particular_id - 1];
+    }
+    Object cur = scenes[0];
+    bool initialized = false;
+    for (int i = 0; i < scenes.length(); ++i) {
+        if (scenes[i].id != ignore_id && (!initialized || scenes[i].dist < cur.dist)) {
+            cur = scenes[i];
+            initialized = true;
+        }
+    }
+    return cur;
+}
+
+Object scene1(vec3 p, int ignore_id, int particular_id) {
+    Object[] scenes = Object[](
+        matt_green_object(1, triangle_fractal_dist(p, vec3(0, 0, 0))),
+        y_chess_plane_object(p, -100, vec2(2000, 2000), white_plastic(2, 0), red_plastic(2, 0))
     );
     if (particular_id != NO_ID) {
         return scenes[particular_id - 1];
@@ -219,15 +213,27 @@ Object scene0(vec3 p, int ignore_id, int particular_id) {
 }
 
 Object cur_scene(vec3 point) {
-    return scene0(point, NO_ID, NO_ID);
+    if (scene_id == 0) {
+        return scene0(point, NO_ID, NO_ID);
+    } else if (scene_id == 1) {
+        return scene1(point, NO_ID, NO_ID);
+    }
 }
 
 Object cur_scene_except(vec3 p, int ignore_id) {
-    return scene0(p, ignore_id, NO_ID);
+    if (scene_id == 0) {
+        return scene0(p, ignore_id, NO_ID);
+    } else if (scene_id == 1) {
+        return scene1(p, ignore_id, NO_ID);
+    }
 }
 
 Object cur_scene_wiht_obj(vec3 p, int obj_id) {
-    return scene0(p, NO_ID, obj_id);
+    if (scene_id == 0) {
+        return scene0(p, NO_ID, obj_id);
+    } else if (scene_id == 1) {
+        return scene1(p, NO_ID, obj_id);
+    }
 }
 
 vec3 estimateNormal(float3 z, int obj_id) {
@@ -267,7 +273,7 @@ struct Light {
     vec3 point;
 };
 
-vec4 light_point(vec3 point, Object obj, vec3 ray_dir, vec3 normal) {
+vec4 light_point0(vec3 point, Object obj, vec3 ray_dir, vec3 normal) {
     vec4 ambinet_color = WHITE;
     Light[] ligths = Light[](
         Light(WHITE, vec3(900, 600, -200)),
@@ -289,6 +295,35 @@ vec4 light_point(vec3 point, Object obj, vec3 ray_dir, vec3 normal) {
     return color;
 }
 
+vec4 light_point1(vec3 point, Object obj, vec3 ray_dir, vec3 normal) {
+    vec4 ambinet_color = WHITE;
+    Light[] ligths = Light[](
+        Light(WHITE, vec3(-200, 0, 200)),
+        Light(WHITE, vec3(200, 0, 200))
+    );
+    vec4 color = BLACK;
+    for (int i = 0; i < ligths.length(); ++i) {
+        Light light = ligths[i];
+        color += ambinet_color*obj.ambient;
+        if (isVisible(light.point, point, obj.id)) {
+            vec3 to_light = normalize(light.point - point);
+            float scalar = dot(to_light, normal);
+            color += light.color*obj.diffuse*max(scalar, 0.f);
+            vec3 reflected_light = 2*scalar*normal - to_light;
+            color += light.color*obj.specular*pow(max(dot(-ray_dir, reflected_light), 0.f), 128*obj.specular_shiness);
+        }
+    }
+    return color;
+}
+
+vec4 light_point(vec3 point, Object obj, vec3 ray_dir, vec3 normal) {
+    if (scene_id == 0) {
+        return light_point0(point, obj, ray_dir, normal);
+    } else if (scene_id == 1) {
+        return light_point1(point, obj, ray_dir, normal);
+    }
+}
+
 vec3 EyeRayDir(float x, float y, float w) {
     float fov = 3.141592654f/(2.0f);
     float3 ray_dir;
@@ -302,7 +337,7 @@ vec4 RayTrace(vec3 ray_dir, float w, float h) {
     int reflect_depth = 1;
     float cur_reflection = 1;
     int ignore_id = NO_ID;
-    while (reflect_depth <= 2 && !isOutOfScene(cur)) {
+    while (reflect_depth <= 3 && !isOutOfScene(cur)) {
         Object obj = cur_scene_except(cur, ignore_id);
         cur += obj.dist*ray_dir;
         if (obj.dist <= MIN_DIST) {
@@ -327,18 +362,18 @@ void main(void) {
     float x = fragmentTexCoord.x*w - w/2;
     float y = fragmentTexCoord.y*h - h/2;
 
-    float offset = 1.5;
-
-//    fragColor = 0.5*RayTrace(EyeRayDir(x, y, w), w, h) +
-//                0.125*RayTrace(EyeRayDir((x + offset)/2, y/2, w/2), w/2, h/2) +
-//                0.125*RayTrace(EyeRayDir(x/2, (y + offset)/2, w/2), w/2, h/2) +
-//                0.125*RayTrace(EyeRayDir((x - offset)/2, y/2, w/2), w/2, h/2) +
-//                0.125*RayTrace(EyeRayDir(x/2, (y - offset)/2, w/2), w/2, h/2);
-
-//    fragColor = (RayTrace(EyeRayDir(x, y, w), w, h) +
-//                RayTrace(EyeRayDir(x/5, y/5, w/5), w/5, h/5))/2;
-
-    vec3 ray_dir = EyeRayDir(x, y, w);
-
-    fragColor = RayTrace(ray_dir, w, h);
+    if (antialiasing == 1) {
+        float offset = 0.4;
+        fragColor = (RayTrace(EyeRayDir(x, y, w), w, h) +
+                     RayTrace(EyeRayDir(x + offset, y, w), w, h) +
+                     RayTrace(EyeRayDir(x + offset, y + offset, w), w, h) +
+                     RayTrace(EyeRayDir(x + offset, y - offset, w), w, h) +
+                     RayTrace(EyeRayDir(x - offset, y - offset, w), w, h) +
+                     RayTrace(EyeRayDir(x - offset, y + offset, w), w, h) +
+                     RayTrace(EyeRayDir(x, y + offset, w), w, h) +
+                     RayTrace(EyeRayDir(x - offset, y, w), w, h) +
+                     RayTrace(EyeRayDir(x, y - offset, w), w, h))/9;
+    } else {
+        fragColor = RayTrace(EyeRayDir(x, y, w), w, h);
+    }
 }

@@ -15,23 +15,47 @@ static GLsizei WIDTH = 1024, HEIGHT = 512; //размеры окна
 
 using namespace LiteMath;
 
-float3 default_cam_pos = float3(0, 0, 1500);
+int scene_id = 0;
+
+float3 get_default_cam_pos() {
+    if (scene_id == 0) {
+        return float3(2424.241455, 260.193848, 1651.539795);
+    } else if (scene_id == 1) {
+        return float3(-225.214020, -32.510338, 223.160461);
+    }
+    throw "Oops";
+}
+
+float get_default_along_yz_rot() {
+    if (scene_id == 0) {
+        return 0.150000;
+    } else if (scene_id == 1) {
+        return -0.040000;
+    }
+    throw "Oops";
+}
+
+float get_default_along_xz_rot() {
+    if (scene_id == 0) {
+        return -0.930000;
+    } else if (scene_id == 1) {
+        return 0.760000;
+    }
+    throw "Oops";
+}
+
 float3 default_cam_dir = float3(0, 0, -1);
 float3 default_cam_y = float3(0, 1, 0);
 float3 default_cam_x = float3(1, 0, 0);
 
-float3 cam_pos = default_cam_pos;
+float3 cam_pos = get_default_cam_pos();
 
-double along_xz_rot = 0.;
-double along_yz_rot = 0.;
+double along_yz_rot = get_default_along_yz_rot();
+double along_xz_rot = get_default_along_xz_rot();
 
-//float3 cam_dir = default_cam_dir;
-//
-//float3 cam_y = default_cam_y;
-//
-//float3 cam_x = default_cam_x;
+int antialiasing = 0;
 
-const float DEFAULT_MOVE_SPEED = 30.0f;
+const float DEFAULT_MOVE_SPEED = 20.0f;
 
 const float MULT_SPEED = 3.f;
 
@@ -48,7 +72,12 @@ bool focused = true;
 
 bool first = true;
 
-//float3x3 cur_rotate_matrix;
+void reset_pos() {
+    first = true;
+    cam_pos = get_default_cam_pos();
+    along_xz_rot = get_default_along_xz_rot();
+    along_yz_rot = get_default_along_yz_rot();
+}
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (!focused) {
@@ -72,18 +101,19 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         } else if (key == GLFW_KEY_R) {
             cur_cam_y_speed = DEFAULT_MOVE_SPEED;
         } else if (key == GLFW_KEY_0) {
-            first = true;
-            cam_pos = default_cam_pos;
-            along_xz_rot = 0;
-            along_yz_rot = 0;
-//            cur_rotate_matrix = float3x3();
-//            cam_dir = default_cam_dir;
-//            cam_x = default_cam_x;
-//            cam_y = default_cam_y;
+            reset_pos();
         } else if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT) {
             cur_cam_dir_speed *= MULT_SPEED;
             cur_cam_x_speed *= MULT_SPEED;
             cur_cam_y_speed *= MULT_SPEED;
+        } else if (key == GLFW_KEY_1) {
+            scene_id = 0;
+            reset_pos();
+        } else if (key == GLFW_KEY_2) {
+            scene_id = 1;
+            reset_pos();
+        } else if (key == GLFW_KEY_3) {
+            antialiasing = !antialiasing;
         }
     } else if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_W) {
@@ -180,7 +210,7 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL ray marching sample", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "", nullptr, nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -251,6 +281,9 @@ int main(int argc, char **argv) {
 
     //цикл обработки сообщений и отрисовки сцены каждый кадр
     while (!glfwWindowShouldClose(window)) {
+        char title_buf[2048];
+        snprintf(title_buf, sizeof(title_buf), "OpenGL ray marching sample. antialiasing: %s. scene_id: %d", antialiasing ? "on" : "off", scene_id);
+
         glfwPollEvents();
 
         if (!focused) {
@@ -288,7 +321,14 @@ int main(int argc, char **argv) {
 
         float3 cam_dir = rotate*default_cam_dir;
 
+//        printf("along_xz_rot: %lf\n", along_xz_rot);
+//        printf("along_yz_rot: %lf\n", along_yz_rot);
+
         calculate_cur_cam_pos(cam_dir, cam_x, cam_y);
+
+//        printf("cam_pos: %lf %lf %lf\n", cam_pos.x, cam_pos.y, cam_pos.z);
+
+        glfwSetWindowTitle(window, title_buf);
 
         program.SetUniform("g_screenWidth", WIDTH);
         program.SetUniform("g_screenHeight", HEIGHT);
@@ -296,6 +336,8 @@ int main(int argc, char **argv) {
         program.SetUniform("cam_dir", cam_dir);
         program.SetUniform("cam_x", cam_x);
         program.SetUniform("cam_y", cam_y);
+        program.SetUniform("scene_id", scene_id);
+        program.SetUniform("antialiasing", antialiasing);
 
         // очистка и заполнение экрана цветом
         glViewport(0, 0, WIDTH, HEIGHT);
