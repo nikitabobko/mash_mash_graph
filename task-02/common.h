@@ -13,7 +13,7 @@
 //в строчке, где он был записан вызывает ThrowExceptionOnGLError, которая при возникновении ошибки opengl
 //пишет в консоль номер текущей строки и название исходного файла
 //а также тип ошибки
-#define GL_CHECK_ERRORS ThrowExceptionOnGLError(__LINE__,__FILE__);
+#define GL_CHECK_ERRORS ThrowExceptionOnGLError(__LINE__,__FILE__)
 
 
 //#define PI 3.1415926535897932384626433832795f

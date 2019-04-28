@@ -1,5 +1,6 @@
 //internal includes
 #include "common.h"
+#include "core.cpp"
 #include "ShaderProgram.h"
 
 //External dependencies
@@ -54,8 +55,6 @@ int main(int argc, char **argv) {
     while (gl_error != GL_NO_ERROR)
         gl_error = glGetError();
 
-    //создание шейдерной программы из двух файлов с исходниками шейдеров
-    //используется класс-обертка ShaderProgram
     std::unordered_map<GLenum, std::string> shaders;
     shaders[GL_VERTEX_SHADER] = "vertex.glsl";
     shaders[GL_FRAGMENT_SHADER] = "fragment.glsl";
@@ -64,81 +63,39 @@ int main(int argc, char **argv) {
 
     glfwSwapInterval(1); // force 60 frames per second
 
-    //Создаем и загружаем геометрию поверхности
-    //
-    GLuint g_vertexBufferObject;
-    GLuint g_vertexArrayObject;
-    {
-        float trianglePos[] =
-                {
-                        -0.5f, -0.5f,
-                        0.5f, -0.5f,
-                        0.0f, +0.5f,
-                };
+    // magic
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
-        g_vertexBufferObject = 0;
-        GLuint vertexLocation = 0; // simple layout, assume have only positions at location = 0
+    GLfloat triangle_mesh[] = {
+            -1.0f, -1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+    };
+    Object objects[] = {
+            Object(triangle_mesh, sizeof(triangle_mesh)),
+    };
+    Scene scene(objects, sizeof(objects));
 
-        glGenBuffers(1, &g_vertexBufferObject);
-        GL_CHECK_ERRORS;
-        glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);
-        GL_CHECK_ERRORS;
-        glBufferData(GL_ARRAY_BUFFER, 3 * 2 * sizeof(GLfloat), (GLfloat *) trianglePos, GL_STATIC_DRAW);
-        GL_CHECK_ERRORS;
-
-        glGenVertexArrays(1, &g_vertexArrayObject);
-        GL_CHECK_ERRORS;
-        glBindVertexArray(g_vertexArrayObject);
-        GL_CHECK_ERRORS;
-
-        glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);
-        GL_CHECK_ERRORS;
-        glEnableVertexAttribArray(vertexLocation);
-        GL_CHECK_ERRORS;
-        glVertexAttribPointer(vertexLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        GL_CHECK_ERRORS;
-
-        glBindVertexArray(0);
-    }
-
-    //цикл обработки сообщений и отрисовки сцены каждый кадр
+    // main loop
     while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
 
-        //очищаем экран каждый кадр
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        GL_CHECK_ERRORS;
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        GL_CHECK_ERRORS;
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT);
 
         program.StartUseShader();
-        GL_CHECK_ERRORS;
 
+        scene.draw();
 
-        // очистка и заполнение экрана цветом
-        //
-        glViewport(0, 0, WIDTH, HEIGHT);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-        // draw call
-        //
-        glBindVertexArray(g_vertexArrayObject);
-        GL_CHECK_ERRORS;
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        GL_CHECK_ERRORS;  // The last parameter of glDrawArrays is equal to VS invocations
-
-
-        program.StopUseShader();
-
+        // Swap buffers
         glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
-    //очищаем vboи vao перед закрытием программы
-    //
-    glDeleteVertexArrays(1, &g_vertexArrayObject);
-    glDeleteBuffers(1, &g_vertexBufferObject);
-
+    // Close OpenGL window and terminate GLFW
     glfwTerminate();
+    glDeleteVertexArrays(1, &vao);
+
     return 0;
 }
