@@ -1,7 +1,9 @@
-#version 330
+#version 330 core
 
-layout(location = 0) in vec2 vertex;
+layout(location = 0) in vec3 triangle;
 
-void main(void) {
-    gl_Position  = vec4(vertex, 0.0, 1.0);
+uniform mat4 PVM;
+
+void main() {
+    gl_Position = PVM * vec4(triangle, 1);
 }

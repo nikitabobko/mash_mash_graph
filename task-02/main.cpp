@@ -8,6 +8,10 @@
 
 #include <GLFW/glfw3.h>
 #include <random>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+using namespace glm;
 
 static const GLsizei WIDTH = 640, HEIGHT = 480; //размеры окна
 
@@ -68,6 +72,17 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+
+    // Camera matrix
+    glm::mat4 view = glm::lookAt(
+            glm::vec3(0, 0, 3), // Camera pos, in World Space
+            glm::vec3(0, 0, 0), // and looks at the origin
+            glm::vec3(0, 1, 0)  // Head is up
+    );
+
+    glm::mat4 PV = projection * view;
+
     GLfloat triangle_mesh[] = {
             -1.0f, -1.0f, 0.0f,
             1.0f, -1.0f, 0.0f,
@@ -76,7 +91,7 @@ int main(int argc, char **argv) {
     Object objects[] = {
             Object(triangle_mesh, sizeof(triangle_mesh)),
     };
-    Scene scene(objects, sizeof(objects));
+    Scene scene(objects, sizeof(objects)/sizeof(*objects));
 
     // main loop
     while (!glfwWindowShouldClose(window)) {
@@ -86,7 +101,7 @@ int main(int argc, char **argv) {
 
         program.StartUseShader();
 
-        scene.draw();
+        scene.draw(program, PV);
 
         // Swap buffers
         glfwSwapBuffers(window);

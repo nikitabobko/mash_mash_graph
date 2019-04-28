@@ -5,19 +5,21 @@
 static const int MESH_ATTRIB_INDEX = 0;
 
 #include <GLFW/glfw3.h>
-
 #include <memory>
 #include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+using namespace glm;
 
 struct Object {
     GLfloat *my_mesh;
     GLuint my_vertex_buffer_id = 0;
+    glm::mat4 my_model_matrix = glm::mat4(1.0f);
 
     Object() {
     }
 
     Object(GLfloat *mesh, GLsizeiptr size_in_bytes) {
-        std::cout << "object creation" << std::endl;
         my_mesh = mesh;
         glGenBuffers(1, &my_vertex_buffer_id);
         glBindBuffer(GL_ARRAY_BUFFER, my_vertex_buffer_id);
@@ -27,7 +29,11 @@ struct Object {
 //    Object(const Object& other) = delete;
 //    const Object &operator =(const Object &other) = delete;
 
-    void draw() {
+    void draw(ShaderProgram &program, const glm::mat4 &PV) {
+        glm::mat4 pidr = PV*my_model_matrix;
+        program.SetUniform("PVM", pidr);
+
+        glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, my_vertex_buffer_id);
         glVertexAttribPointer(MESH_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
         glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -47,10 +53,10 @@ struct Scene {
         my_objects_len = objects_len;
     }
 
-    void draw() {
+    void draw(ShaderProgram &program, const glm::mat4 &PV) {
         glEnableVertexAttribArray(MESH_ATTRIB_INDEX);
         for (int i = 0; i < my_objects_len; ++i) {
-            my_objects[i].draw();
+            my_objects[i].draw(program, PV);
         }
 //        glDisableVertexAttribArray(0);
     }
