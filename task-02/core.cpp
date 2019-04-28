@@ -20,6 +20,7 @@ static const int MESH_ATTRIB_INDEX = 0;
 
 struct Object {
     GLfloat *my_mesh;
+    int my_mesh_len;
     GLuint my_vertex_buffer_id = 0;
     vec3 my_position;
 
@@ -28,6 +29,7 @@ struct Object {
 
     Object(GLfloat *mesh, GLsizeiptr size_in_bytes, glm::vec3 position) {
         my_position = position;
+        my_mesh_len = size_in_bytes / sizeof(*mesh);
 //        glm::mat4 model_matrix = glm::rotate(get_model_matrix(), M_PI_4f32, glm::vec3(1, 0, 1));
         my_mesh = mesh;
         glGenBuffers(1, &my_vertex_buffer_id);
@@ -49,7 +51,7 @@ struct Object {
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, my_vertex_buffer_id);
         glVertexAttribPointer(MESH_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, my_mesh_len);
     }
 
     void delete_it() {
@@ -61,8 +63,8 @@ struct SpinningObject : public Object {
     float my_spin_speed;
     long my_init_time;
 
-    SpinningObject(GLfloat *mesh, GLsizeiptr size_in_bytes, float spin_speed, glm::vec3 postion) :
-            Object(mesh, size_in_bytes, postion) {
+    SpinningObject(GLfloat *mesh, GLsizeiptr size_in_bytes, glm::vec3 position, float spin_speed) :
+            Object(mesh, size_in_bytes, position) {
         my_spin_speed = spin_speed;
         my_init_time = get_cur_time_millis();
     }
@@ -79,7 +81,7 @@ struct Scene {
     glm::mat4 my_projection_matrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
     // Camera matrix
     glm::mat4 my_view_matrix = glm::lookAt(
-            glm::vec3(0, 0, 10), // Camera pos, in World Space
+            glm::vec3(3, 4, 10), // Camera pos, in World Space
             glm::vec3(0, 0, 0), // and looks at the origin
             glm::vec3(0, 1, 0)  // Head is up
     );
