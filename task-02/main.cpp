@@ -1,9 +1,8 @@
-//internal includes
 #include "common.h"
 #include "core.cpp"
 #include "ShaderProgram.h"
+#include "util.h"
 
-//External dependencies
 #define GLFW_DLL
 
 #include <GLFW/glfw3.h>
@@ -88,10 +87,10 @@ int main(int argc, char **argv) {
             1.0f, -1.0f, 0.0f,
             0.0f, 1.0f, 0.0f,
     };
-    Object objects[] = {
-            Object(triangle_mesh, sizeof(triangle_mesh)),
+    Object *objects[] = {
+            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), 0.001f),
     };
-    Scene scene(objects, sizeof(objects)/sizeof(*objects));
+    Scene scene(objects, sizeof(objects) / sizeof(*objects));
 
     // main loop
     while (!glfwWindowShouldClose(window)) {
@@ -101,7 +100,7 @@ int main(int argc, char **argv) {
 
         program.StartUseShader();
 
-        scene.draw(program, PV);
+        scene.draw(program, get_cur_time_millis(), PV);
 
         // Swap buffers
         glfwSwapBuffers(window);
