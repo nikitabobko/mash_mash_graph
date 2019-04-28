@@ -71,24 +71,14 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-
-    // Camera matrix
-    glm::mat4 view = glm::lookAt(
-            glm::vec3(0, 0, 3), // Camera pos, in World Space
-            glm::vec3(0, 0, 0), // and looks at the origin
-            glm::vec3(0, 1, 0)  // Head is up
-    );
-
-    glm::mat4 PV = projection * view;
-
     GLfloat triangle_mesh[] = {
             -1.0f, -1.0f, 0.0f,
             1.0f, -1.0f, 0.0f,
             0.0f, 1.0f, 0.0f,
     };
     Object *objects[] = {
-            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), 0.001f),
+            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), 0.001f, glm::vec3(2, 0, 0.5)),
+            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), 0.002f, glm::vec3(-1, 0, -1)),
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
 
@@ -100,7 +90,7 @@ int main(int argc, char **argv) {
 
         program.StartUseShader();
 
-        scene.draw(program, get_cur_time_millis(), PV);
+        scene.draw(program, get_cur_time_millis());
 
         // Swap buffers
         glfwSwapBuffers(window);

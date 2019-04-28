@@ -3,4 +3,6 @@
 
 long get_cur_time_millis();
 
+void print_matrix4(const glm::mat4 matrix);
+
 #endif
