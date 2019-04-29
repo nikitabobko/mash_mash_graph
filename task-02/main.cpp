@@ -201,9 +201,9 @@ int main(int argc, char **argv) {
             0.0f, 1.0f, 0.0f,
     };
     Object *objects[] = {
-            new SpinningObject(triangle_mesh, sizeof(cube_mesh), glm::vec3(2, 0, 0.5), true, texture, uv, sizeof(uv), 0.001f),
+//            new SpinningObject(triangle_mesh, sizeof(cube_mesh), glm::vec3(2, 0, 0.5), true, texture, uv, sizeof(uv), 0.001f),
 //            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), glm::vec3(-1, 0, -1), 0.002f),
-//            new SpinningObject(cube_mesh, sizeof(cube_mesh), glm::vec3(4.0f, 0.0f, 0.0f), 0.001f)
+            new SpinningObject(cube_mesh, sizeof(cube_mesh), glm::vec3(0.0f, 0.0f, 0.0f), true, texture, uv, sizeof(uv), 0.001f)
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
 
