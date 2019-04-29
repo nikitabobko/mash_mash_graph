@@ -132,8 +132,7 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint texture = load_texture(
-            "/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp"); // todo fix this absolute path
+    GLuint texture = load_texture("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/Conc01.bmp"); // todo fix this absolute path
 
     GLfloat cube_mesh[] = {
             -1.0f, -1.0f, -1.0f,
