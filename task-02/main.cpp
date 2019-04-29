@@ -31,7 +31,7 @@ GLuint load_texture(const char *filename) {
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
     // Give the image to OpenGL
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 
     // OpenGL has now copied the data. Free our own version todo obfuscate copy paste
     SOIL_free_image_data(image);
@@ -66,6 +66,24 @@ int initGL() {
     std::cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
     return 0;
+}
+
+void gen_cube_mesh(GLfloat *buffer) {
+//    GLfloat local_buffer[] = {
+//        1, 1, 1,
+//        1, -1, 1,
+//        -1, 1, 1,
+//
+//
+//    };
+
+//    for (int global_x = 0; global_x < 2; ++global_x) {
+//        for (int global_y = 0; global_y < 2; ++global_y) {
+//            for (int global_z = 0; global_z < 2; ++global_z) {
+//
+//            }
+//        }
+//    }
 }
 
 int main(int argc, char **argv) {
@@ -114,45 +132,46 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint texture = load_texture("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp"); // todo fix this absolute path
+    GLuint texture = load_texture(
+            "/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp"); // todo fix this absolute path
 
     GLfloat cube_mesh[] = {
-            -1.0f,-1.0f,-1.0f,
-            -1.0f,-1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f, 1.0f,
             -1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f,-1.0f,
-            -1.0f,-1.0f,-1.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f, 1.0f,
-            -1.0f,-1.0f,-1.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f,-1.0f,
-            -1.0f,-1.0f,-1.0f,
-            -1.0f,-1.0f,-1.0f,
+            1.0f, 1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
             -1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f, 1.0f,
-            -1.0f,-1.0f, 1.0f,
-            -1.0f,-1.0f,-1.0f,
+            -1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f,
             -1.0f, 1.0f, 1.0f,
-            -1.0f,-1.0f, 1.0f,
-            1.0f,-1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f,
+            1.0f, -1.0f, 1.0f,
             1.0f, 1.0f, 1.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f,-1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
             1.0f, 1.0f, 1.0f,
-            1.0f,-1.0f, 1.0f,
+            1.0f, -1.0f, 1.0f,
             1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f,-1.0f,
-            -1.0f, 1.0f,-1.0f,
+            1.0f, 1.0f, -1.0f,
+            -1.0f, 1.0f, -1.0f,
             1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f,-1.0f,
+            -1.0f, 1.0f, -1.0f,
             -1.0f, 1.0f, 1.0f,
             1.0f, 1.0f, 1.0f,
             -1.0f, 1.0f, 1.0f,
-            1.0f,-1.0f, 1.0f
+            1.0f, -1.0f, 1.0f
     };
 
     GLfloat uv[] = {
@@ -209,8 +228,10 @@ int main(int argc, char **argv) {
     Object *objects[] = {
 //            new SpinningObject(triangle_mesh, sizeof(cube_mesh), glm::vec3(2, 0, 0.5), true, texture, uv, sizeof(uv), 0.001f),
 //            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), glm::vec3(-1, 0, -1), 0.002f),
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(3.0f, 0.0f, 0.0f), 0.001f))->set_texture(texture, uv, sizeof(uv)),
-            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(-4, 0, 0), 0.001f))->set_color(triangle_color, sizeof(triangle_color))
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(3.0f, 0.0f, 0.0f), 0.001f))->set_texture(texture, uv,
+                                                                                                            sizeof(uv)),
+            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(-4, 0, 0), 0.001f))->set_color(
+                    triangle_color, sizeof(triangle_color))
 
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
