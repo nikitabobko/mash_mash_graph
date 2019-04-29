@@ -16,11 +16,10 @@ using namespace glm;
 
 static const GLsizei WIDTH = 640, HEIGHT = 480; //размеры окна
 
-GLuint load_image(const char *filename) {
+GLuint load_texture(const char *filename) {
     int width, height;
     unsigned char *image = SOIL_load_image(filename, &width, &height, 0, SOIL_LOAD_RGB);
     if (image == nullptr) {
-//        DIR *pDirstream = opendir(".");
         std::cerr << "Cannot load image" << std::endl;
         return 0;
     }
@@ -32,9 +31,9 @@ GLuint load_image(const char *filename) {
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
     // Give the image to OpenGL
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 
-    // OpenGL has now copied the data. Free our own version todo
+    // OpenGL has now copied the data. Free our own version todo obfuscate copy paste
     SOIL_free_image_data(image);
 
     // Poor filtering, or ...
@@ -115,7 +114,7 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint texture = load_image("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp");
+    GLuint texture = load_texture("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp"); // todo fix this absolute path
 
     GLfloat cube_mesh[] = {
             -1.0f,-1.0f,-1.0f,
@@ -200,10 +199,19 @@ int main(int argc, char **argv) {
             1.0f, -1.0f, 0.0f,
             0.0f, 1.0f, 0.0f,
     };
+
+    GLfloat triangle_color[] = {
+            1.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f,
+    };
+
     Object *objects[] = {
 //            new SpinningObject(triangle_mesh, sizeof(cube_mesh), glm::vec3(2, 0, 0.5), true, texture, uv, sizeof(uv), 0.001f),
 //            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), glm::vec3(-1, 0, -1), 0.002f),
-            new SpinningObject(cube_mesh, sizeof(cube_mesh), glm::vec3(0.0f, 0.0f, 0.0f), true, texture, uv, sizeof(uv), 0.001f)
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(3.0f, 0.0f, 0.0f), 0.001f))->set_texture(texture, uv, sizeof(uv)),
+            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(-4, 0, 0), 0.001f))->set_color(triangle_color, sizeof(triangle_color))
+
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
 
@@ -222,9 +230,13 @@ int main(int argc, char **argv) {
         glfwPollEvents();
     }
 
+    scene.delete_it();
+
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
     glDeleteVertexArrays(1, &vao);
 
     return 0;
 }
+
+// todo check all comments. Read entire code once more
