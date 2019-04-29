@@ -11,20 +11,18 @@ set(SOURCE_FILES
         ShaderProgram.cpp
         core.cpp util.cpp util.h)
 
-set(ADDITIONAL_INCLUDE_DIRS
-        dependencies/include/GLAD)
-set(ADDITIONAL_LIBRARY_DIRS
-        dependencies/lib)
-set(ADDITIONAL_RUNTIME_LIBRARY_DIRS
-        dependencies/bin)
+set(ADDITIONAL_INCLUDE_DIRS dependencies/include/GLAD dependencies/include/SOIL)
+set(ADDITIONAL_LIBRARY_DIRS dependencies/lib)
+set(ADDITIONAL_RUNTIME_LIBRARY_DIRS dependencies/bin)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 
+#link_directories(${ADDITIONAL_LIBRARY_DIRS})
+
+link_directories(dependencies/lib)
+
 if (WIN32)
-    set(ADDITIONAL_INCLUDE_DIRS
-            ${ADDITIONAL_INCLUDE_DIRS}
-            dependencies/include)
-    link_directories(${ADDITIONAL_LIBRARY_DIRS})
+
 else ()
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
     find_package(glfw3 REQUIRED)
@@ -33,6 +31,8 @@ endif ()
 include_directories(${ADDITIONAL_INCLUDE_DIRS})
 
 find_package(OpenGL REQUIRED)
+
+#find_package(soil REQUIRED)
 
 add_executable(main ${SOURCE_FILES})
 
@@ -46,6 +46,6 @@ if (WIN32)
     target_link_libraries(main LINK_PUBLIC ${OPENGL_gl_LIBRARY} glfw3dll)
 else ()
     target_compile_options(main PRIVATE -Wnarrowing)
-    target_link_libraries(main LINK_PUBLIC ${OPENGL_gl_LIBRARY} glfw rt dl)
+    target_link_libraries(main LINK_PUBLIC ${OPENGL_gl_LIBRARY} glfw rt dl SOIL)
 endif ()
 
