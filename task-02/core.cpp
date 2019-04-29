@@ -139,7 +139,7 @@ struct SpinningObject : public Object {
 struct Scene {
     Object **my_objects;
     int my_objects_len;
-    glm::mat4 my_projection_matrix = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::mat4 my_projection_matrix = glm::perspective(glm::radians(45.0f), 1280.0f / 1024.0f, 0.1f, 100.0f);
     // Camera matrix
     glm::mat4 my_view_matrix = glm::lookAt(
             glm::vec3(0, 0, 10), // Camera pos, in World Space

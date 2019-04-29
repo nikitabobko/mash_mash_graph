@@ -14,7 +14,7 @@
 
 using namespace glm;
 
-static const GLsizei WIDTH = 640, HEIGHT = 480; //размеры окна
+static const GLsizei WIDTH = 1280, HEIGHT = 1024; //размеры окна
 
 GLuint load_texture(const char *filename) {
     int width, height;
@@ -132,7 +132,10 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint texture = load_texture("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/Conc01.bmp"); // todo fix this absolute path
+    GLuint texture = load_texture(
+            "/home/bobko/code/cmc-msu/mash_mash_graph/task-02/Conc01.bmp"); // todo fix this absolute path
+
+    GLuint metalroof_texture = load_texture("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp");
 
     GLfloat cube_mesh[] = {
             -1.0f, -1.0f, -1.0f,
@@ -224,13 +227,36 @@ int main(int argc, char **argv) {
             0.0f, 0.0f, 1.0f,
     };
 
+    GLfloat plane_scale = 7;
+    GLfloat back_plane_mesh[] = {
+            -plane_scale, -plane_scale, 0,
+            -plane_scale, plane_scale, 0,
+            plane_scale, -plane_scale, 0,
+
+            plane_scale, plane_scale, 0,
+            plane_scale, -plane_scale, 0,
+            -plane_scale, plane_scale, 0
+    };
+
+    GLfloat back_plane_uv[] = {
+            -1, -1,
+            -1, 1,
+            1, -1,
+
+            1, 1,
+            1, -1,
+            -1, 1
+    };
+
     Object *objects[] = {
 //            new SpinningObject(triangle_mesh, sizeof(cube_mesh), glm::vec3(2, 0, 0.5), true, texture, uv, sizeof(uv), 0.001f),
 //            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), glm::vec3(-1, 0, -1), 0.002f),
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(3.0f, 0.0f, 0.0f), 0.001f))->set_texture(texture, uv,
-                                                                                                            sizeof(uv)),
-            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(-4, 0, 0), 0.001f))->set_color(
-                    triangle_color, sizeof(triangle_color))
+            (new Object(back_plane_mesh, sizeof(back_plane_mesh), vec3(0, 0, -2)))
+                    ->set_texture(metalroof_texture, back_plane_uv, sizeof(back_plane_uv)),
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(3.0f, 0.0f, 0.0f), 0.001f))
+                    ->set_texture(texture, uv, sizeof(uv)),
+            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(-4, 0, 0), 0.001f))
+                    ->set_color(triangle_color, sizeof(triangle_color)),
 
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
