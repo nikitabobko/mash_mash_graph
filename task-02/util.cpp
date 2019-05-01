@@ -3,6 +3,8 @@
 #include "util.h"
 #include <cstdio>
 
+float global_bound = 6.f;
+
 long get_cur_time_millis() {
     using namespace std::chrono;
     milliseconds ms = duration_cast<milliseconds>(
@@ -18,4 +20,12 @@ void print_matrix4(const glm::mat4 matrix) {
         }
         printf("\n");
     }
+}
+
+int positive_rand(int bound) {
+    return rand() % bound;
+}
+
+int integer_rand(int bound) {
+    return rand() % 2 == 0 ? positive_rand(bound) : -positive_rand(bound);
 }

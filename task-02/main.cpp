@@ -132,93 +132,132 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint texture = load_texture(
-            "/home/bobko/code/cmc-msu/mash_mash_graph/task-02/Conc01.bmp"); // todo fix this absolute path
+    GLuint camo_texture = load_texture(
+            "/home/bobko/code/cmc-msu/mash_mash_graph/task-02/camo.bmp"); // todo fix this absolute path
 
     GLuint metalroof_texture = load_texture("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp");
 
     GLfloat cube_mesh[] = {
             -1.0f, -1.0f, -1.0f,
-            -1.0f, -1.0f, 1.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f, -1.0f,
+            -1.0f, -1.0f, +1.0f,
+            -1.0f, +1.0f, +1.0f,
+            +1.0f, +1.0f, -1.0f,
             -1.0f, -1.0f, -1.0f,
-            -1.0f, 1.0f, -1.0f,
-            1.0f, -1.0f, 1.0f,
+            -1.0f, +1.0f, -1.0f,
+            +1.0f, -1.0f, +1.0f,
             -1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, 1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
+            +1.0f, -1.0f, -1.0f,
+            +1.0f, +1.0f, -1.0f,
+            +1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f, -1.0f,
-            -1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f, -1.0f,
-            1.0f, -1.0f, 1.0f,
-            -1.0f, -1.0f, 1.0f,
+            -1.0f, +1.0f, +1.0f,
+            -1.0f, +1.0f, -1.0f,
+            +1.0f, -1.0f, +1.0f,
+            -1.0f, -1.0f, +1.0f,
             -1.0f, -1.0f, -1.0f,
-            -1.0f, 1.0f, 1.0f,
-            -1.0f, -1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, 1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f, -1.0f,
-            -1.0f, 1.0f, -1.0f,
-            1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f, -1.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f
+            -1.0f, +1.0f, +1.0f,
+            -1.0f, -1.0f, +1.0f,
+            +1.0f, -1.0f, +1.0f,
+            +1.0f, +1.0f, +1.0f,
+            +1.0f, -1.0f, -1.0f,
+            +1.0f, +1.0f, -1.0f,
+            +1.0f, -1.0f, -1.0f,
+            +1.0f, +1.0f, +1.0f,
+            +1.0f, -1.0f, +1.0f,
+            +1.0f, +1.0f, +1.0f,
+            +1.0f, +1.0f, -1.0f,
+            -1.0f, +1.0f, -1.0f,
+            +1.0f, +1.0f, +1.0f,
+            -1.0f, +1.0f, -1.0f,
+            -1.0f, +1.0f, +1.0f,
+            +1.0f, +1.0f, +1.0f,
+            -1.0f, +1.0f, +1.0f,
+            +1.0f, -1.0f, +1.0f
+    };
+
+    GLfloat cube_color[] = {
+            1.0f, 0.0f, 0.0f, // red
+            1.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, // blue
+            0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f,
+            1.0f, 1.0f, 0.0f, // yellow
+            1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, // blue
+            0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 0.0f, // red
+            1.0f, 0.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+            1.0f, 1.0f, 0.0f, // yellow
+            1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,
+            1.0f, 0.0f, 1.0f, // purple
+            1.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 1.0f, // cyan
+            0.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 1.0f, // cyan
+            0.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, // green
+            0.0f, 1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, // green
+            0.0f, 1.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            1.0f, 0.0f, 1.0f, // purple
+            1.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 1.0f,
     };
 
     GLfloat uv[] = {
             0.0f, 0.0f,
             1.0f, 0.0f,
-            1.1f, 1.1f,
-            0.0f, 1.0f,
             1.0f, 1.0f,
-            1.0f, 0.0f, //
+            1.0f, 1.0f,
             0.0f, 0.0f,
             1.0f, 0.0f,
-            1.1f, 1.1f,
-            0.0f, 1.0f,
             1.0f, 1.0f,
-            1.0f, 0.0f,
             0.0f, 0.0f,
             1.0f, 0.0f,
-            1.1f, 1.1f,
+            1.0f, 1.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+            0.0f, 0.0f,
+            1.0f, 1.0f,
             0.0f, 1.0f,
             1.0f, 1.0f,
-            1.0f, 0.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+            0.0f, 1.0f,
             0.0f, 0.0f,
             1.0f, 0.0f,
-            1.1f, 1.1f,
-            0.0f, 1.0f,
             1.0f, 1.0f,
-            1.0f, 0.0f,
             0.0f, 0.0f,
             1.0f, 0.0f,
-            1.1f, 1.1f,
+            0.0f, 0.0f,
+            1.0f, 1.0f,
             0.0f, 1.0f,
             1.0f, 1.0f,
-            1.0f, 0.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+            1.0f, 1.0f,
             0.0f, 0.0f,
             1.0f, 0.0f,
-            1.1f, 1.1f,
-            0.0f, 1.0f,
             1.0f, 1.0f,
+            0.0f, 1.0f,
             1.0f, 0.0f,
     };
 
     GLfloat triangle_mesh[] = {
-            -1.0f, -1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f, +0.0f,
+            +1.0f, -1.0f, +0.0f,
+            +0.0f, +1.0f, +0.0f,
     };
 
     GLfloat triangle_color[] = {
@@ -227,7 +266,7 @@ int main(int argc, char **argv) {
             0.0f, 0.0f, 1.0f,
     };
 
-    GLfloat plane_scale = 7;
+    GLfloat plane_scale = 13;
     GLfloat back_plane_mesh[] = {
             -plane_scale, -plane_scale, 0,
             -plane_scale, plane_scale, 0,
@@ -248,15 +287,62 @@ int main(int argc, char **argv) {
             -1, 1
     };
 
+    GLfloat tetrahedron_mesh[] = {
+            -1.0f, -1.0f, +1.0f,
+            +1.0f, -1.0f, +1.0f,
+            +0.0f, +1.0f, +1.0f,
+
+            -1.0f, -1.0f, +1.0f,
+            +1.0f, -1.0f, +1.0f,
+            +0.0f, +0.0f, -1.0f,
+
+            +1.0f, -1.0f, +1.0f,
+            +0.0f, +1.0f, +1.0f,
+            +0.0f, +0.0f, -1.0f,
+
+            -1.0f, -1.0f, +1.0f,
+            +0.0f, +1.0f, +1.0f,
+            +0.0f, +0.0f, -1.0f,
+    };
+
+    GLfloat tetrahedron_color[] = {
+            0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f,
+
+            1.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 1.0f,
+
+            1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,
+
+            0.5f, 0.5f, 0.5f,
+            0.5f, 0.5f, 0.5f,
+            0.5f, 0.5f, 0.5f,
+    };
+
+    srand(time(0));
+
     Object *objects[] = {
-//            new SpinningObject(triangle_mesh, sizeof(cube_mesh), glm::vec3(2, 0, 0.5), true, texture, uv, sizeof(uv), 0.001f),
-//            new SpinningObject(triangle_mesh, sizeof(triangle_mesh), glm::vec3(-1, 0, -1), 0.002f),
-            (new Object(back_plane_mesh, sizeof(back_plane_mesh), vec3(0, 0, -2)))
+            (new Object(back_plane_mesh, sizeof(back_plane_mesh), vec3(-plane_scale / 2, 0, -global_bound - 2)))
                     ->set_texture(metalroof_texture, back_plane_uv, sizeof(back_plane_uv)),
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(3.0f, 0.0f, 0.0f), 0.001f))
-                    ->set_texture(texture, uv, sizeof(uv)),
-            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(-4, 0, 0), 0.001f))
-                    ->set_color(triangle_color, sizeof(triangle_color)),
+            (new Object(back_plane_mesh, sizeof(back_plane_mesh), vec3(plane_scale / 2, 0, -global_bound - 2)))
+                    ->set_texture(metalroof_texture, back_plane_uv, sizeof(back_plane_uv)),
+
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
+                    ->set_texture(camo_texture, uv, sizeof(uv))
+                    ->add_random_movement(),
+            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(0)))
+                    ->set_color(triangle_color, sizeof(triangle_color))
+                    ->add_random_movement(),
+            (new SpinningObject(tetrahedron_mesh, sizeof(tetrahedron_mesh), vec3(0)))
+                    ->set_color(tetrahedron_color, sizeof(tetrahedron_color))
+                    ->add_random_movement(),
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
+                    ->add_random_movement()
+                    ->set_color(cube_color, sizeof(cube_color)),
 
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
