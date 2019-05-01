@@ -286,3 +286,5 @@ int main(int argc, char **argv) {
 }
 
 // todo check all comments. Read entire code once more
+// todo Check on Ubuntu virtual machine
+// todo SOIL.so
