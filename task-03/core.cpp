@@ -19,12 +19,30 @@ using namespace glm;
 static const int MESH_ATTRIB_INDEX = 0;
 static const int TEXTURE_ATTRIB_INDEX = 1;
 static const int COLOR_ATTRIB_INDEX = 2;
+static const int NORMAL_ATTRIB_INDEX = 3;
+
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float specular_shiness;
+
+    Material() {
+
+    }
+
+    Material(const vec3 &ambient, const vec3 &diffuse, const vec3 &specular, float specularShiness) :
+            ambient(ambient), diffuse(diffuse), specular(specular), specular_shiness(specularShiness) {
+    }
+};
 
 struct Object {
     GLfloat *my_mesh;
     int my_mesh_len;
     GLuint my_vertex_buffer_id = 0;
     vec3 my_position;
+
+    GLuint my_normal_buffer_id = 0;
 
     GLuint my_texture_id = 0;
     GLfloat *my_texture_coords = nullptr;
@@ -33,18 +51,15 @@ struct Object {
     GLuint my_color_buffer_id = 0;
     GLfloat *my_color_buffer = nullptr;
 
-    float my_bounding_box;
-    vec3 my_direction = vec3(0);
-    long my_prev_time = 0;
-
     float my_scale_factor = 1.0f;
+
+    Material my_material;
 
     Object() = delete;
 
-    Object(GLfloat *mesh, GLsizeiptr mesh_size_in_bytes, glm::vec3 position) {
-        if (position == vec3(0)) {
-            position = vec3(integer_rand(global_bound));
-        }
+    Object(GLfloat *mesh, GLsizeiptr mesh_size_in_bytes, glm::vec3 position, GLfloat *normals,
+           GLsizeiptr normals_size_in_bytes, const Material &material) {
+        my_material = material;
         my_position = position;
         my_mesh_len = mesh_size_in_bytes / sizeof(*mesh);
 
@@ -52,6 +67,10 @@ struct Object {
         glGenBuffers(1, &my_vertex_buffer_id);
         glBindBuffer(GL_ARRAY_BUFFER, my_vertex_buffer_id);
         glBufferData(GL_ARRAY_BUFFER, mesh_size_in_bytes, my_mesh, GL_STATIC_DRAW);
+
+        glGenBuffers(1, &my_normal_buffer_id);
+        glBindBuffer(GL_ARRAY_BUFFER, my_normal_buffer_id);
+        glBufferData(GL_ARRAY_BUFFER, normals_size_in_bytes, normals, GL_STATIC_DRAW);
     }
 
     Object *scale(float factor) {
@@ -76,41 +95,7 @@ struct Object {
         return this;
     }
 
-    Object *add_random_movement() {
-        float speeds[] = {0.001f, 0.002f, 0.003f};
-
-        return add_movement(
-                speeds[positive_rand(sizeof(speeds) / sizeof(*speeds))],
-                vec3(integer_rand(1000), integer_rand(1000), integer_rand(1000)),
-                global_bound);
-    }
-
-    Object *add_movement(float speed, vec3 direction, float bounding_box) {
-        my_bounding_box = bounding_box;
-        my_direction = speed * glm::normalize(direction);
-        my_prev_time = get_cur_time_millis();
-        return this;
-    }
-
-    vec3 calc_current_position(long time_millis) {
-        return my_position + float(time_millis - my_prev_time) * my_direction;
-    }
-
     virtual glm::mat4 get_model_matrix(long time_millis) {
-        my_position = calc_current_position(time_millis);
-        my_prev_time = time_millis;
-        if (glm::length(my_direction) > 0.0000001 &&
-            (std::abs(my_position.x) > my_bounding_box ||
-             std::abs(my_position.y) > my_bounding_box ||
-             std::abs(my_position.z) > my_bounding_box)) {
-            vec3 normal = glm::normalize(vec3(-1. * (std::abs(my_position.x) > my_bounding_box) * my_position.x,
-                                              -1. * (std::abs(my_position.y) > my_bounding_box) * my_position.y,
-                                              -1. * (std::abs(my_position.z) > my_bounding_box) * my_position.z));
-            float len = glm::length(my_direction);
-            my_direction = 2 * glm::dot(normal, -my_direction) * normal + my_direction;
-            my_direction -= 0.00001f * glm::normalize(my_position);
-            my_direction = len * glm::normalize(my_direction);
-        }
         return glm::translate(glm::mat4(1.0f), my_position) * glm::scale(glm::mat4(1.0f), vec3(my_scale_factor));
     }
 
@@ -118,15 +103,29 @@ struct Object {
 
     const Object &operator=(const Object &other) = delete;
 
-    void draw(ShaderProgram &program, long time_millis, const glm::mat4 &pv) {
-        glm::mat4 PVM = pv * get_model_matrix(time_millis);
-        program.SetUniform("PVM", PVM);
+    void draw(ShaderProgram &program, long time_millis, const glm::mat4 &projection, const glm::mat4 &view,
+              const vec3 &light_pos) {
+        const mat4 &model_matrix = get_model_matrix(time_millis);
+        const mat4 &VM = view * model_matrix;
+        program.SetUniform("PVM", projection * VM);
+        program.SetUniform("VM", VM);
+
+        program.SetUniform("ambient", my_material.ambient);
+        program.SetUniform("diffuse", my_material.diffuse);
+        program.SetUniform("specular", my_material.specular);
+        program.SetUniform("specular_shiness", my_material.specular_shiness);
+
+        program.SetUniform("light_position", light_pos);
 
         // mesh
         glEnableVertexAttribArray(MESH_ATTRIB_INDEX);
-        glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, my_vertex_buffer_id);
         glVertexAttribPointer(MESH_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+        // Normal
+        glEnableVertexAttribArray(NORMAL_ATTRIB_INDEX);
+        glBindBuffer(GL_ARRAY_BUFFER, my_normal_buffer_id);
+        glVertexAttribPointer(NORMAL_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
         // Texture
         program.SetUniform("has_texture", my_texture_coords != nullptr);
@@ -140,6 +139,7 @@ struct Object {
             program.SetUniform("fragment_texture", 0);
         }
 
+        // Color
         program.SetUniform("has_color", my_color_buffer != nullptr);
         if (my_color_buffer != nullptr) {
             glEnableVertexAttribArray(COLOR_ATTRIB_INDEX);
@@ -168,14 +168,34 @@ struct Object {
     }
 };
 
+struct SwingingObject : public Object {
+    float my_speed;
+    float my_amplitude;
+    long my_swinging_init_time;
+
+    SwingingObject(GLfloat *mesh, GLsizeiptr meshSizeInBytes, const vec3 &position, GLfloat *normals,
+                   GLsizeiptr normalsSizeInBytes, const Material &material, float mySpeed, float amplitude) :
+            Object(mesh, meshSizeInBytes, position, normals, normalsSizeInBytes, material) {
+        my_speed = mySpeed;
+        my_amplitude = amplitude;
+        my_swinging_init_time = get_cur_time_millis();
+    }
+
+    glm::mat4 get_model_matrix(long time_millis) override {
+        float angle = my_amplitude * cos(my_speed * (time_millis - my_swinging_init_time));
+        return Object::get_model_matrix(time_millis) * glm::rotate(mat4(1), angle, vec3(0, 0, 1));
+    }
+};
+
 struct SpinningObject : public Object {
     float my_spin_speed;
     long my_spinning_init_time;
     vec3 cur_rot_vec = vec3(1, 1, 1);
     mat4 cur_rot_matrix = mat4(1);
 
-    SpinningObject(GLfloat *mesh, GLsizeiptr mesh_size_in_bytes, glm::vec3 position) :
-            Object(mesh, mesh_size_in_bytes, position) {
+    SpinningObject(GLfloat *mesh, GLsizeiptr mesh_size_in_bytes, glm::vec3 position, GLfloat *normals,
+                   GLsizeiptr normals_size_in_bytes, const Material &material) :
+            Object(mesh, mesh_size_in_bytes, position, normals, normals_size_in_bytes, material) {
         float speeds[] = {0.001f, 0.002f, 0.003f};
         my_spin_speed = speeds[positive_rand(sizeof(speeds) / sizeof(*speeds))];
         my_spinning_init_time = get_cur_time_millis();
@@ -201,35 +221,24 @@ struct Scene {
     Object **my_objects;
     int my_objects_len;
     glm::mat4 my_projection_matrix = glm::perspective(glm::radians(45.0f), 1280.0f / 1024.0f, 0.1f, 100.0f);
+    glm::vec3 camera_pos = glm::vec3(10, 4, 17);
     // Camera matrix
     glm::mat4 my_view_matrix = glm::lookAt(
-            glm::vec3(0, 0, 17), // Camera pos, in World Space
+            camera_pos, // Camera pos, in World Space
             glm::vec3(0, 0, 0), // and looks at the origin
             glm::vec3(0, 1, 0)  // Head is up
     );
-    Object *fixate_object = nullptr;
+    glm::vec3 light_position = vec3(5, 0, 0);
 
     Scene(Object **objects, int objects_len) {
         my_objects = objects;
         my_objects_len = objects_len;
     }
 
-    void fixate_camera_on_random_object() {
-        fixate_object = my_objects[positive_rand(my_objects_len)];
-    }
-
-    void undo_fixate_camera() {
-        fixate_object = nullptr;
-    }
-
     void draw(ShaderProgram &program, long time_millis) {
-        mat4 view_matrix = my_view_matrix;
-        if (fixate_object != nullptr) {
-            view_matrix = glm::translate(view_matrix,
-                                         vec3(0, 0, 10) - (fixate_object->calc_current_position(time_millis)));
-        }
+        program.SetUniform("camera_pos", camera_pos);
         for (int i = 0; i < my_objects_len; ++i) {
-            my_objects[i]->draw(program, time_millis, my_projection_matrix * view_matrix);
+            my_objects[i]->draw(program, time_millis, my_projection_matrix, my_view_matrix, light_position);
         }
     }
 

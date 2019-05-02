@@ -19,6 +19,15 @@ using namespace glm;
 
 static const GLsizei WIDTH = 1280, HEIGHT = 1024; //размеры окна
 
+static const Material RED_PLASTIC(vec3(0.0, 0.0, 0.0), vec3(0.5, 0.0, 0.0), vec3(0.7, 0.6, 0.6), 0.25);
+static const Material NO_MATERIAL(vec3(0.0), vec3(0), vec3(0), 1);
+static const Material GREEN_RUBER(vec3(0.0, 0.05, 0.0), vec3(0.4, 0.5, 0.4), vec3(0.04, 0.7, 0.04), .078125);
+static const Material BLACK_PLASTIC(vec3(0.0, 0.0, 0.0), vec3(0.01, 0.01, 0.01), vec3(0.50, 0.50, 0.50), 0.25f);
+static const Material COPPER(vec3(0.19125, 0.0735, 0.0225), vec3(0.7038, 0.27048, 0.0828),
+                             vec3(0.256777, 0.137622, 0.086014), 0.1);
+static const Material SILVER_MATERIAL(vec3(0.19225, 0.19225, 0.19225), vec3(0.50754, 0.50754, 0.50754),
+                                      vec3(0.508273, 0.508273, 0.508273), 0.4);
+
 GLuint load_texture(const char *filename) {
     int width, height;
     unsigned char *image = SOIL_load_image(filename, &width, &height, 0, SOIL_LOAD_RGB);
@@ -54,8 +63,10 @@ int initGL() {
     return 0;
 }
 
-void assimp_loaded_obj_to_internal(const aiScene *loaded_obj, std::vector<GLfloat> *mesh,
-                                   std::vector<GLfloat> *texture_coords) {
+void assimp_loaded_obj_to_internal(const aiScene *loaded_obj,
+                                   std::vector<GLfloat> *mesh,
+                                   std::vector<GLfloat> *texture_coords,
+                                   std::vector<GLfloat> *normals) {
     for (int mesh_index = 0; mesh_index < loaded_obj->mNumMeshes; ++mesh_index) {
         aiMesh *cur_mesh = loaded_obj->mMeshes[mesh_index];
         for (int i = 0; i < cur_mesh->mNumVertices; ++i) {
@@ -70,18 +81,12 @@ void assimp_loaded_obj_to_internal(const aiScene *loaded_obj, std::vector<GLfloa
                 texture_coords->push_back(cur_mesh->mTextureCoords[0][i].y);
             }
         }
-    }
-}
 
-bool fixate = false;
-
-void on_key_click(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_F2 && action == GLFW_PRESS) {
-        fixate = true;
-    }
-
-    if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
-        fixate = false;
+        for (int i = 0; i < cur_mesh->mNumVertices; ++i) {
+            normals->push_back(cur_mesh->mNormals[i].x);
+            normals->push_back(cur_mesh->mNormals[i].y);
+            normals->push_back(cur_mesh->mNormals[i].z);
+        }
     }
 }
 
@@ -104,8 +109,6 @@ int main(int argc, char **argv) {
 
     glfwMakeContextCurrent(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-    glfwSetKeyCallback(window, on_key_click);
 
     if (initGL() != 0)
         return -1;
@@ -130,10 +133,6 @@ int main(int argc, char **argv) {
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
-    GLuint camo_texture = load_texture("res/camo.bmp");
-
-    GLuint metalroof_texture = load_texture("res/metalroof1.bmp");
 
     GLfloat cube_mesh[] = {
             -1.0f, -1.0f, -1.0f,
@@ -171,10 +170,49 @@ int main(int argc, char **argv) {
             -1.0f, +1.0f, +1.0f,
             +1.0f, +1.0f, +1.0f,
             -1.0f, +1.0f, +1.0f,
-            +1.0f, -1.0f, +1.0f
+            +1.0f, -1.0f, +1.0f,
     };
 
-    GLfloat cube_color[] = {
+    GLfloat cube_normals[] = {
+            -1.0f, +0.0f, +0.0f,
+            -1.0f, +0.0f, +0.0f,
+            -1.0f, +0.0f, +0.0f,
+            +0.0f, +0.0f, -1.0f,
+            +0.0f, +0.0f, -1.0f,
+            +0.0f, +0.0f, -1.0f,
+            +0.0f, -1.0f, +0.0f,
+            +0.0f, -1.0f, +0.0f,
+            +0.0f, -1.0f, +0.0f,
+            +0.0f, +0.0f, -1.0f,
+            +0.0f, +0.0f, -1.0f,
+            +0.0f, +0.0f, -1.0f,
+            -1.0f, +0.0f, +0.0f,
+            -1.0f, +0.0f, +0.0f,
+            -1.0f, +0.0f, +0.0f,
+            +0.0f, -1.0f, +0.0f,
+            +0.0f, -1.0f, +0.0f,
+            +0.0f, -1.0f, +0.0f,
+            +0.0f, +0.0f, +1.0f,
+            +0.0f, +0.0f, +1.0f,
+            +0.0f, +0.0f, +1.0f,
+            +1.0f, +0.0f, +0.0f,
+            +1.0f, +0.0f, +0.0f,
+            +1.0f, +0.0f, +0.0f,
+            +1.0f, +0.0f, +0.0f,
+            +1.0f, +0.0f, +0.0f,
+            +1.0f, +0.0f, +0.0f,
+            +0.0f, +1.0f, +0.0f,
+            +0.0f, +1.0f, +0.0f,
+            +0.0f, +1.0f, +0.0f,
+            +0.0f, +1.0f, +0.0f,
+            +0.0f, +1.0f, +0.0f,
+            +0.0f, +1.0f, +0.0f,
+            +0.0f, +0.0f, +1.0f,
+            +0.0f, +0.0f, +1.0f,
+            +0.0f, +0.0f, +1.0f,
+    };
+
+    GLfloat cube_different_color[] = {
             1.0f, 0.0f, 0.0f, // red
             1.0f, 0.0f, 0.0f,
             1.0f, 0.0f, 0.0f,
@@ -211,6 +249,45 @@ int main(int argc, char **argv) {
             1.0f, 0.0f, 1.0f, // purple
             1.0f, 0.0f, 1.0f,
             1.0f, 0.0f, 1.0f,
+    };
+
+    GLfloat cube_purple_color[] = {
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
+            0.0f, 0.0f, 0.6f,
     };
 
     GLfloat cube_texture_coords[] = {
@@ -252,127 +329,74 @@ int main(int argc, char **argv) {
             1.0f, 0.0f,
     };
 
-    GLfloat triangle_mesh[] = {
-            -1.0f, -1.0f, +0.0f,
-            +1.0f, -1.0f, +0.0f,
-            +0.0f, +1.0f, +0.0f,
+    float down_plane_scale = 7.0f;
+    GLfloat down_plane_mesh[] = {
+            +down_plane_scale, 0, +down_plane_scale,
+            +down_plane_scale, 0, -down_plane_scale,
+            -down_plane_scale, 0, +down_plane_scale,
+
+            +down_plane_scale, 0, -down_plane_scale,
+            -down_plane_scale, 0, +down_plane_scale,
+            -down_plane_scale, 0, -down_plane_scale,
     };
 
-    GLfloat triangle_color[] = {
-            1.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 1.0f,
-    };
-
-    GLfloat plane_scale = 30;
-    GLfloat back_plane_mesh[] = {
-            -plane_scale, -plane_scale, 0,
-            -plane_scale, plane_scale, 0,
-            plane_scale, -plane_scale, 0,
-
-            plane_scale, plane_scale, 0,
-            plane_scale, -plane_scale, 0,
-            -plane_scale, plane_scale, 0
-    };
-
-    GLfloat back_plane_texture_coords[] = {
-            -1, -1,
-            -1, 1,
-            1, -1,
+    GLfloat down_plane_texture_coords[] = {
+            1, 0,
+            1, 1,
+            0, 0,
 
             1, 1,
-            1, -1,
-            -1, 1
+            0, 0,
+            0, 1,
     };
 
-    GLfloat tetrahedron_mesh[] = {
-            -1.0f, -1.0f, +1.0f,
-            +1.0f, -1.0f, +1.0f,
-            +0.0f, +1.0f, +1.0f,
+    GLfloat down_plane_normals[] = {
+            0, 1, 0,
+            0, 1, 0,
+            0, 1, 0,
 
-            -1.0f, -1.0f, +1.0f,
-            +1.0f, -1.0f, +1.0f,
-            +0.0f, +0.0f, -1.0f,
-
-            +1.0f, -1.0f, +1.0f,
-            +0.0f, +1.0f, +1.0f,
-            +0.0f, +0.0f, -1.0f,
-
-            -1.0f, -1.0f, +1.0f,
-            +0.0f, +1.0f, +1.0f,
-            +0.0f, +0.0f, -1.0f,
+            0, 1, 0,
+            0, 1, 0,
+            0, 1, 0,
     };
 
-    GLfloat tetrahedron_color[] = {
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f,
-
-            1.0f, 0.0f, 1.0f,
-            1.0f, 0.0f, 1.0f,
-            1.0f, 0.0f, 1.0f,
-
-            1.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 0.0f,
-
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f,
-    };
+    GLuint grass_texture = load_texture("res/grass.jpg");
 
     Assimp::Importer importer;
-    const aiScene *loaded_obj = importer.ReadFile("res/obj/thor_hammer.obj", aiProcess_Triangulate);
+    const aiScene *hammer_loaded_obj = importer.ReadFile("res/obj/thor_hammer.obj", aiProcess_Triangulate);
 
     std::vector<GLfloat> hammer_mesh;
     std::vector<GLfloat> hammer_texture_coords;
-    assimp_loaded_obj_to_internal(loaded_obj, &hammer_mesh, &hammer_texture_coords);
+    std::vector<GLfloat> hammer_normals;
+    assimp_loaded_obj_to_internal(hammer_loaded_obj, &hammer_mesh, &hammer_texture_coords, &hammer_normals);
+
+    const aiScene *hammer_stand_loaded_obj = importer.ReadFile("res/obj/hammer_stand.obj", aiProcess_Triangulate);
+
+    std::vector<GLfloat> hammer_stand_mesh;
+    std::vector<GLfloat> hammer_stand_texture_coords;
+    std::vector<GLfloat> hammer_stand_normals;
+    assimp_loaded_obj_to_internal(hammer_stand_loaded_obj, &hammer_stand_mesh,
+                                  &hammer_stand_texture_coords, &hammer_stand_normals);
 
     srand(time(0));
 
-    GLuint hammer_texture = load_texture("res/obj/hammer_texture.jpg");
-
     Object *objects[] = {
-            (new Object(back_plane_mesh, sizeof(back_plane_mesh),
-                        vec3(-plane_scale / 2, 0, -global_bound - plane_scale)))
-                    ->set_texture(metalroof_texture, back_plane_texture_coords, sizeof(back_plane_texture_coords)),
-            (new Object(back_plane_mesh, sizeof(back_plane_mesh),
-                        vec3(plane_scale / 2, 0, -global_bound - plane_scale)))
-                    ->set_texture(metalroof_texture, back_plane_texture_coords, sizeof(back_plane_texture_coords)),
-
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
-                    ->set_texture(camo_texture, cube_texture_coords, sizeof(cube_texture_coords))
-                    ->add_random_movement(),
-            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(0)))
-                    ->set_color(triangle_color, sizeof(triangle_color))
-                    ->add_random_movement(),
-            (new SpinningObject(tetrahedron_mesh, sizeof(tetrahedron_mesh), vec3(0)))
-                    ->set_color(tetrahedron_color, sizeof(tetrahedron_color))
-                    ->add_random_movement(),
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
-                    ->add_random_movement()
-                    ->set_color(cube_color, sizeof(cube_color)),
-            (new SpinningObject(hammer_mesh.data(), hammer_mesh.size() * sizeof(hammer_mesh[0]), vec3(0)))
-                    ->add_random_movement()
-                    ->set_texture(hammer_texture, hammer_texture_coords.data(),
-                                  hammer_texture_coords.size() * sizeof(hammer_texture_coords[0]))
+            (new SwingingObject(hammer_mesh.data(), hammer_mesh.size() * sizeof(hammer_mesh[0]), vec3(0, 5, 0),
+                                hammer_normals.data(), hammer_normals.size() * sizeof(hammer_normals[0]),
+                                SILVER_MATERIAL, 0.001f, 0.2))
                     ->scale(0.8),
-
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
-                    ->set_texture(camo_texture, cube_texture_coords, sizeof(cube_texture_coords))
-                    ->add_random_movement(),
-            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(0)))
-                    ->set_color(triangle_color, sizeof(triangle_color))
-                    ->add_random_movement(),
-            (new SpinningObject(tetrahedron_mesh, sizeof(tetrahedron_mesh), vec3(0)))
-                    ->set_color(tetrahedron_color, sizeof(tetrahedron_color))
-                    ->add_random_movement(),
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
-                    ->add_random_movement()
-                    ->set_color(cube_color, sizeof(cube_color)),
-            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
-                    ->add_random_movement()
-                    ->set_color(cube_color, sizeof(cube_color)),
+            (new Object(hammer_stand_mesh.data(), hammer_stand_mesh.size() * sizeof(hammer_stand_mesh[0]),
+                        vec3(0, 4.9, 0), hammer_stand_normals.data(),
+                        hammer_stand_normals.size() * sizeof(hammer_stand_normals[0]), RED_PLASTIC)),
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(-4, 2, 0), cube_normals, sizeof(cube_normals),
+                                RED_PLASTIC))
+                    ->set_color(cube_different_color, sizeof(cube_different_color)),
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(4, 2, 0), cube_normals, sizeof(cube_normals),
+                                RED_PLASTIC))
+                    ->set_color(cube_purple_color, sizeof(cube_purple_color)),
+            (new Object(down_plane_mesh, sizeof(down_plane_mesh), vec3(0, -5, 0), down_plane_normals,
+                        sizeof(down_plane_normals), GREEN_RUBER))
+                    ->set_texture(grass_texture, down_plane_texture_coords, sizeof(down_plane_texture_coords)),
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
 
@@ -381,16 +405,6 @@ int main(int argc, char **argv) {
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        if (fixate && scene.fixate_object == nullptr) {
-            do {
-                scene.fixate_camera_on_random_object();
-            } while (scene.fixate_object->my_mesh == back_plane_mesh);
-        }
-
-        if (!fixate) {
-            scene.undo_fixate_camera();
-        }
 
         program.StartUseShader();
 
@@ -407,3 +421,5 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+// todo obfuscate cube

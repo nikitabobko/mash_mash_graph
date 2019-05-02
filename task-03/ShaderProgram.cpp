@@ -187,3 +187,12 @@ void ShaderProgram::SetUniform(const std::string &location, const glm::mat4 &val
     }
     glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &(value[0][0]));
 }
+
+void ShaderProgram::SetUniform(const std::string &location, const glm::vec3 &value) const {
+    GLint uniformLocation = glGetUniformLocation(shaderProgram, location.c_str());
+    if (uniformLocation == -1) {
+        std::cerr << "Uniform  " << location << " not found" << std::endl;
+        return;
+    }
+    glUniform3f(uniformLocation, value.x, value.y, value.z);
+}
