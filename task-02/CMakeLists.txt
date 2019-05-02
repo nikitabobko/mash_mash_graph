@@ -17,7 +17,7 @@ set(ADDITIONAL_RUNTIME_LIBRARY_DIRS dependencies/bin)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 
-#link_directories(${ADDITIONAL_LIBRARY_DIRS})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/res DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 link_directories(dependencies/lib)
 
@@ -31,6 +31,8 @@ endif ()
 include_directories(${ADDITIONAL_INCLUDE_DIRS})
 
 find_package(OpenGL REQUIRED)
+
+find_package(assimp REQUIRED)
 
 #find_package(soil REQUIRED)
 
@@ -46,6 +48,6 @@ if (WIN32)
     target_link_libraries(main LINK_PUBLIC ${OPENGL_gl_LIBRARY} glfw3dll)
 else ()
     target_compile_options(main PRIVATE -Wnarrowing)
-    target_link_libraries(main LINK_PUBLIC ${OPENGL_gl_LIBRARY} glfw rt dl SOIL)
+    target_link_libraries(main LINK_PUBLIC ${OPENGL_gl_LIBRARY} glfw rt dl SOIL assimp)
 endif ()
 

@@ -11,6 +11,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <dirent.h>
 #include "SOIL.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 using namespace glm;
 
@@ -19,36 +22,19 @@ static const GLsizei WIDTH = 1280, HEIGHT = 1024; //размеры окна
 GLuint load_texture(const char *filename) {
     int width, height;
     unsigned char *image = SOIL_load_image(filename, &width, &height, 0, SOIL_LOAD_RGB);
+
     if (image == nullptr) {
-        std::cerr << "Cannot load image" << std::endl;
+        std::cerr << "Cannot load image " << filename << std::endl;
         return 0;
     }
 
     GLuint texture_id;
     glGenTextures(1, &texture_id);
-
-    // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, texture_id);
-
-    // Give the image to OpenGL
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 
-    // OpenGL has now copied the data. Free our own version todo obfuscate copy paste
     SOIL_free_image_data(image);
-
-    // Poor filtering, or ...
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // ... nice trilinear filtering ...
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    // ... which requires mipmaps. Generate them automatically.
     glGenerateMipmap(GL_TEXTURE_2D);
-
-    // Return the ID of the texture we just created
     return texture_id;
 }
 
@@ -68,22 +54,34 @@ int initGL() {
     return 0;
 }
 
-void gen_cube_mesh(GLfloat *buffer) {
-//    GLfloat local_buffer[] = {
-//        1, 1, 1,
-//        1, -1, 1,
-//        -1, 1, 1,
-//
-//
-//    };
+void assimp_loaded_obj_to_internal(const aiScene *loaded_obj, std::vector<GLfloat> *mesh, std::vector<GLfloat> *uv) {
+    for (int mesh_index = 0; mesh_index < loaded_obj->mNumMeshes; ++mesh_index) {
+        aiMesh *cur_mesh = loaded_obj->mMeshes[mesh_index];
+        for (int i = 0; i < cur_mesh->mNumVertices; ++i) {
+            mesh->push_back(cur_mesh->mVertices[i].x);
+            mesh->push_back(cur_mesh->mVertices[i].y);
+            mesh->push_back(cur_mesh->mVertices[i].z);
+        }
 
-//    for (int global_x = 0; global_x < 2; ++global_x) {
-//        for (int global_y = 0; global_y < 2; ++global_y) {
-//            for (int global_z = 0; global_z < 2; ++global_z) {
-//
-//            }
-//        }
-//    }
+        if (cur_mesh->mTextureCoords[0] != nullptr) {
+            for (int i = 0; i < cur_mesh->mNumVertices; ++i) {
+                uv->push_back(cur_mesh->mTextureCoords[0][i].x);
+                uv->push_back(cur_mesh->mTextureCoords[0][i].y);
+            }
+        }
+    }
+}
+
+bool fixate = false;
+
+void on_key_click(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_F2 && action == GLFW_PRESS) {
+        fixate = true;
+    }
+
+    if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
+        fixate = false;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -105,6 +103,8 @@ int main(int argc, char **argv) {
 
     glfwMakeContextCurrent(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    glfwSetKeyCallback(window, on_key_click);
 
     if (initGL() != 0)
         return -1;
@@ -132,10 +132,9 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint camo_texture = load_texture(
-            "/home/bobko/code/cmc-msu/mash_mash_graph/task-02/camo.bmp"); // todo fix this absolute path
+    GLuint camo_texture = load_texture("res/camo.bmp");
 
-    GLuint metalroof_texture = load_texture("/home/bobko/code/cmc-msu/mash_mash_graph/task-02/metalroof1.bmp");
+    GLuint metalroof_texture = load_texture("res/metalroof1.bmp");
 
     GLfloat cube_mesh[] = {
             -1.0f, -1.0f, -1.0f,
@@ -266,7 +265,7 @@ int main(int argc, char **argv) {
             0.0f, 0.0f, 1.0f,
     };
 
-    GLfloat plane_scale = 13;
+    GLfloat plane_scale = 30;
     GLfloat back_plane_mesh[] = {
             -plane_scale, -plane_scale, 0,
             -plane_scale, plane_scale, 0,
@@ -323,12 +322,23 @@ int main(int argc, char **argv) {
             0.5f, 0.5f, 0.5f,
     };
 
+    Assimp::Importer importer;
+    const aiScene *loaded_obj = importer.ReadFile("res/obj/thor_hammer.obj", aiProcess_Triangulate);
+
+    std::vector<GLfloat> mesh_hammer;
+    std::vector<GLfloat> uv_hammer;
+    assimp_loaded_obj_to_internal(loaded_obj, &mesh_hammer, &uv_hammer);
+
     srand(time(0));
 
+    GLuint hammer_texture = load_texture("res/obj/hammer_texture.jpg");
+
     Object *objects[] = {
-            (new Object(back_plane_mesh, sizeof(back_plane_mesh), vec3(-plane_scale / 2, 0, -global_bound - 2)))
+            (new Object(back_plane_mesh, sizeof(back_plane_mesh),
+                        vec3(-plane_scale / 2, 0, -global_bound - plane_scale)))
                     ->set_texture(metalroof_texture, back_plane_uv, sizeof(back_plane_uv)),
-            (new Object(back_plane_mesh, sizeof(back_plane_mesh), vec3(plane_scale / 2, 0, -global_bound - 2)))
+            (new Object(back_plane_mesh, sizeof(back_plane_mesh),
+                        vec3(plane_scale / 2, 0, -global_bound - plane_scale)))
                     ->set_texture(metalroof_texture, back_plane_uv, sizeof(back_plane_uv)),
 
             (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
@@ -343,7 +353,26 @@ int main(int argc, char **argv) {
             (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
                     ->add_random_movement()
                     ->set_color(cube_color, sizeof(cube_color)),
+            (new SpinningObject(mesh_hammer.data(), mesh_hammer.size() * sizeof(mesh_hammer[0]), vec3(0)))
+                    ->add_random_movement()
+                    ->set_texture(hammer_texture, uv_hammer.data(), uv_hammer.size() * sizeof(uv_hammer[0]))
+                    ->scale(0.8),
 
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
+                    ->set_texture(camo_texture, uv, sizeof(uv))
+                    ->add_random_movement(),
+            (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(0)))
+                    ->set_color(triangle_color, sizeof(triangle_color))
+                    ->add_random_movement(),
+            (new SpinningObject(tetrahedron_mesh, sizeof(tetrahedron_mesh), vec3(0)))
+                    ->set_color(tetrahedron_color, sizeof(tetrahedron_color))
+                    ->add_random_movement(),
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
+                    ->add_random_movement()
+                    ->set_color(cube_color, sizeof(cube_color)),
+            (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
+                    ->add_random_movement()
+                    ->set_color(cube_color, sizeof(cube_color)),
     };
     Scene scene(objects, sizeof(objects) / sizeof(*objects));
 
@@ -352,6 +381,16 @@ int main(int argc, char **argv) {
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if (fixate && scene.fixate_object == nullptr) {
+            do {
+                scene.fixate_camera_on_random_object();
+            } while (scene.fixate_object->my_mesh == back_plane_mesh);
+        }
+
+        if (!fixate) {
+            scene.undo_fixate_camera();
+        }
 
         program.StartUseShader();
 
@@ -374,3 +413,4 @@ int main(int argc, char **argv) {
 // todo check all comments. Read entire code once more
 // todo Check on Ubuntu virtual machine
 // todo SOIL.so
+// todo rename uv to texture coordinates
