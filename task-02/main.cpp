@@ -115,9 +115,7 @@ int main(int argc, char **argv) {
     while (gl_error != GL_NO_ERROR)
         gl_error = glGetError();
 
-    // Enable depth test
     glEnable(GL_DEPTH_TEST);
-    // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
 
     std::unordered_map<GLenum, std::string> shaders;
@@ -404,13 +402,8 @@ int main(int argc, char **argv) {
     }
 
     scene.delete_it();
-
-    // Close OpenGL window and terminate GLFW
     glfwTerminate();
     glDeleteVertexArrays(1, &vao);
 
     return 0;
 }
-
-// todo check all comments. Read entire code once more
-// todo Check on Ubuntu virtual machine

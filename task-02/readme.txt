@@ -19,7 +19,16 @@
 * Возможность разместить камеру на случайном объекте (по нажатию F2 камера фиксируется 
   на случайном объекте, при нажатии на F1 возвращается в изначальное положение) (+1 балл)
 
-Итого за доп. баллы: 6 баллов.
+Итого за доп. часть: 6 баллов.
+
+Установка зависимостей:
+sudo apt update
+sudo apt install g++
+sudo apt install cmake
+sudo apt install libglfw3-dev
+sudo apt install libassimp-dev
+sudo apt install libglm-dev
+sudo apt install libsoil-dev
 
 Как собирать и запускать:
 mkdir build

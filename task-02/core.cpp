@@ -79,7 +79,8 @@ struct Object {
     Object *add_random_movement() {
         float speeds[] = {0.001f, 0.002f, 0.003f};
 
-        return add_movement(speeds[positive_rand(sizeof(speeds) / sizeof(*speeds))],
+        return add_movement(
+                speeds[positive_rand(sizeof(speeds) / sizeof(*speeds))],
                 vec3(integer_rand(1000), integer_rand(1000), integer_rand(1000)),
                 global_bound);
     }
@@ -113,8 +114,9 @@ struct Object {
         return glm::translate(glm::mat4(1.0f), my_position) * glm::scale(glm::mat4(1.0f), vec3(my_scale_factor));
     }
 
-    Object(const Object& other) = delete;
-    const Object &operator =(const Object &other) = delete;
+    Object(const Object &other) = delete;
+
+    const Object &operator=(const Object &other) = delete;
 
     void draw(ShaderProgram &program, long time_millis, const glm::mat4 &pv) {
         glm::mat4 PVM = pv * get_model_matrix(time_millis);
@@ -173,16 +175,10 @@ struct SpinningObject : public Object {
     vec3 cur_rot_vec = vec3(1, 1, 1);
     mat4 cur_rot_matrix = mat4(1);
 
-//    SpinningObject(GLfloat *mesh, GLsizeiptr mesh_size_in_bytes, glm::vec3 position, float spin_speed) :
-//            Object(mesh, mesh_size_in_bytes, position) {
-//        my_spin_speed = spin_speed;
-//        my_spinning_init_time = get_cur_time_millis();
-//    }
-
     SpinningObject(GLfloat *mesh, GLsizeiptr mesh_size_in_bytes, glm::vec3 position) :
             Object(mesh, mesh_size_in_bytes, position) {
         float speeds[] = {0.001f, 0.002f, 0.003f};
-        my_spin_speed = speeds[positive_rand(sizeof(speeds)/ sizeof(*speeds))];
+        my_spin_speed = speeds[positive_rand(sizeof(speeds) / sizeof(*speeds))];
         my_spinning_init_time = get_cur_time_millis();
     }
 
@@ -191,7 +187,7 @@ struct SpinningObject : public Object {
         float angle = my_spin_speed * (time_millis - my_spinning_init_time);
         mat4 now_rotate = glm::rotate(mat4(1), angle, cur_rot_vec) * cur_rot_matrix;
         if (positive_rand(100) == 0) { // todo uncomment
-            my_spin_speed = speeds[positive_rand(sizeof(speeds)/ sizeof(*speeds))];
+            my_spin_speed = speeds[positive_rand(sizeof(speeds) / sizeof(*speeds))];
             cur_rot_matrix = now_rotate;
             do {
                 cur_rot_vec = glm::vec3(integer_rand(2), integer_rand(2), integer_rand(2));
@@ -230,7 +226,8 @@ struct Scene {
     void draw(ShaderProgram &program, long time_millis) {
         mat4 view_matrix = my_view_matrix;
         if (fixate_object != nullptr) {
-            view_matrix = glm::translate(view_matrix, vec3(0, 0, 10)-(fixate_object->calc_current_position(time_millis)));
+            view_matrix = glm::translate(view_matrix,
+                                         vec3(0, 0, 10) - (fixate_object->calc_current_position(time_millis)));
         }
         for (int i = 0; i < my_objects_len; ++i) {
             my_objects[i]->draw(program, time_millis, my_projection_matrix * view_matrix);
