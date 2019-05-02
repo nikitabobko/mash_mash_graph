@@ -17,7 +17,7 @@
 using namespace glm;
 
 static const int MESH_ATTRIB_INDEX = 0;
-static const int UV_ATTRIB_INDEX = 1;
+static const int TEXTURE_ATTRIB_INDEX = 1;
 static const int COLOR_ATTRIB_INDEX = 2;
 
 struct Object {
@@ -26,9 +26,9 @@ struct Object {
     GLuint my_vertex_buffer_id = 0;
     vec3 my_position;
 
-    GLuint my_uv_id = 0;
-    GLfloat *my_uv = nullptr;
-    GLuint my_texture = 0;
+    GLuint my_texture_id = 0;
+    GLfloat *my_texture_coords = nullptr;
+    GLuint my_texture_res = 0;
 
     GLuint my_color_buffer_id = 0;
     GLfloat *my_color_buffer = nullptr;
@@ -59,12 +59,12 @@ struct Object {
         return this;
     }
 
-    Object *set_texture(GLuint texture, GLfloat *uv, GLsizeiptr uv_size_in_bytes) {
-        my_texture = texture;
-        my_uv = uv;
-        glGenBuffers(1, &my_uv_id);
-        glBindBuffer(GL_ARRAY_BUFFER, my_uv_id);
-        glBufferData(GL_ARRAY_BUFFER, uv_size_in_bytes, my_uv, GL_STATIC_DRAW);
+    Object *set_texture(GLuint texture, GLfloat *texture_coords, GLsizeiptr texture_coords_size_in_bytes) {
+        my_texture_res = texture;
+        my_texture_coords = texture_coords;
+        glGenBuffers(1, &my_texture_id);
+        glBindBuffer(GL_ARRAY_BUFFER, my_texture_id);
+        glBufferData(GL_ARRAY_BUFFER, texture_coords_size_in_bytes, my_texture_coords, GL_STATIC_DRAW);
         return this;
     }
 
@@ -126,15 +126,15 @@ struct Object {
         glBindBuffer(GL_ARRAY_BUFFER, my_vertex_buffer_id);
         glVertexAttribPointer(MESH_ATTRIB_INDEX, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-        // UV
-        program.SetUniform("has_texture", my_uv != nullptr);
-        if (my_uv != nullptr) {
-            glEnableVertexAttribArray(UV_ATTRIB_INDEX);
-            glBindBuffer(GL_ARRAY_BUFFER, my_uv_id);
-            glVertexAttribPointer(UV_ATTRIB_INDEX, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+        // Texture
+        program.SetUniform("has_texture", my_texture_coords != nullptr);
+        if (my_texture_coords != nullptr) {
+            glEnableVertexAttribArray(TEXTURE_ATTRIB_INDEX);
+            glBindBuffer(GL_ARRAY_BUFFER, my_texture_id);
+            glVertexAttribPointer(TEXTURE_ATTRIB_INDEX, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, my_texture);
+            glBindTexture(GL_TEXTURE_2D, my_texture_res);
             // Set our "myTextureSampler" sampler to use Texture Unit 0 todo
             program.SetUniform("fragment_texture", 0);
         }
@@ -151,15 +151,15 @@ struct Object {
         if (my_color_buffer != nullptr) {
             glDisableVertexAttribArray(COLOR_ATTRIB_INDEX);
         }
-        if (my_uv != nullptr) {
-            glDisableVertexAttribArray(UV_ATTRIB_INDEX);
+        if (my_texture_coords != nullptr) {
+            glDisableVertexAttribArray(TEXTURE_ATTRIB_INDEX);
         }
     }
 
     void delete_it() {
         glDeleteBuffers(1, &my_vertex_buffer_id);
-        if (my_uv != nullptr) {
-            glDeleteBuffers(1, &my_uv_id);
+        if (my_texture_coords != nullptr) {
+            glDeleteBuffers(1, &my_texture_id);
         }
         if (my_color_buffer != nullptr) {
             glDeleteBuffers(1, &my_color_buffer_id);

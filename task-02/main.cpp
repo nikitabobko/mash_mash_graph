@@ -54,7 +54,8 @@ int initGL() {
     return 0;
 }
 
-void assimp_loaded_obj_to_internal(const aiScene *loaded_obj, std::vector<GLfloat> *mesh, std::vector<GLfloat> *uv) {
+void assimp_loaded_obj_to_internal(const aiScene *loaded_obj, std::vector<GLfloat> *mesh,
+                                   std::vector<GLfloat> *texture_coords) {
     for (int mesh_index = 0; mesh_index < loaded_obj->mNumMeshes; ++mesh_index) {
         aiMesh *cur_mesh = loaded_obj->mMeshes[mesh_index];
         for (int i = 0; i < cur_mesh->mNumVertices; ++i) {
@@ -65,8 +66,8 @@ void assimp_loaded_obj_to_internal(const aiScene *loaded_obj, std::vector<GLfloa
 
         if (cur_mesh->mTextureCoords[0] != nullptr) {
             for (int i = 0; i < cur_mesh->mNumVertices; ++i) {
-                uv->push_back(cur_mesh->mTextureCoords[0][i].x);
-                uv->push_back(cur_mesh->mTextureCoords[0][i].y);
+                texture_coords->push_back(cur_mesh->mTextureCoords[0][i].x);
+                texture_coords->push_back(cur_mesh->mTextureCoords[0][i].y);
             }
         }
     }
@@ -214,7 +215,7 @@ int main(int argc, char **argv) {
             1.0f, 0.0f, 1.0f,
     };
 
-    GLfloat uv[] = {
+    GLfloat cube_texture_coords[] = {
             0.0f, 0.0f,
             1.0f, 0.0f,
             1.0f, 1.0f,
@@ -276,7 +277,7 @@ int main(int argc, char **argv) {
             -plane_scale, plane_scale, 0
     };
 
-    GLfloat back_plane_uv[] = {
+    GLfloat back_plane_texture_coords[] = {
             -1, -1,
             -1, 1,
             1, -1,
@@ -325,9 +326,9 @@ int main(int argc, char **argv) {
     Assimp::Importer importer;
     const aiScene *loaded_obj = importer.ReadFile("res/obj/thor_hammer.obj", aiProcess_Triangulate);
 
-    std::vector<GLfloat> mesh_hammer;
-    std::vector<GLfloat> uv_hammer;
-    assimp_loaded_obj_to_internal(loaded_obj, &mesh_hammer, &uv_hammer);
+    std::vector<GLfloat> hammer_mesh;
+    std::vector<GLfloat> hammer_texture_coords;
+    assimp_loaded_obj_to_internal(loaded_obj, &hammer_mesh, &hammer_texture_coords);
 
     srand(time(0));
 
@@ -336,13 +337,13 @@ int main(int argc, char **argv) {
     Object *objects[] = {
             (new Object(back_plane_mesh, sizeof(back_plane_mesh),
                         vec3(-plane_scale / 2, 0, -global_bound - plane_scale)))
-                    ->set_texture(metalroof_texture, back_plane_uv, sizeof(back_plane_uv)),
+                    ->set_texture(metalroof_texture, back_plane_texture_coords, sizeof(back_plane_texture_coords)),
             (new Object(back_plane_mesh, sizeof(back_plane_mesh),
                         vec3(plane_scale / 2, 0, -global_bound - plane_scale)))
-                    ->set_texture(metalroof_texture, back_plane_uv, sizeof(back_plane_uv)),
+                    ->set_texture(metalroof_texture, back_plane_texture_coords, sizeof(back_plane_texture_coords)),
 
             (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
-                    ->set_texture(camo_texture, uv, sizeof(uv))
+                    ->set_texture(camo_texture, cube_texture_coords, sizeof(cube_texture_coords))
                     ->add_random_movement(),
             (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(0)))
                     ->set_color(triangle_color, sizeof(triangle_color))
@@ -353,13 +354,14 @@ int main(int argc, char **argv) {
             (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
                     ->add_random_movement()
                     ->set_color(cube_color, sizeof(cube_color)),
-            (new SpinningObject(mesh_hammer.data(), mesh_hammer.size() * sizeof(mesh_hammer[0]), vec3(0)))
+            (new SpinningObject(hammer_mesh.data(), hammer_mesh.size() * sizeof(hammer_mesh[0]), vec3(0)))
                     ->add_random_movement()
-                    ->set_texture(hammer_texture, uv_hammer.data(), uv_hammer.size() * sizeof(uv_hammer[0]))
+                    ->set_texture(hammer_texture, hammer_texture_coords.data(),
+                                  hammer_texture_coords.size() * sizeof(hammer_texture_coords[0]))
                     ->scale(0.8),
 
             (new SpinningObject(cube_mesh, sizeof(cube_mesh), vec3(0)))
-                    ->set_texture(camo_texture, uv, sizeof(uv))
+                    ->set_texture(camo_texture, cube_texture_coords, sizeof(cube_texture_coords))
                     ->add_random_movement(),
             (new SpinningObject(triangle_mesh, sizeof(triangle_mesh), vec3(0)))
                     ->set_color(triangle_color, sizeof(triangle_color))
@@ -413,4 +415,3 @@ int main(int argc, char **argv) {
 // todo check all comments. Read entire code once more
 // todo Check on Ubuntu virtual machine
 // todo SOIL.so
-// todo rename uv to texture coordinates
