@@ -137,7 +137,6 @@ struct Object {
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, my_texture_res);
-            // Set our "myTextureSampler" sampler to use Texture Unit 0 todo
             program.SetUniform("fragment_texture", 0);
         }
 
@@ -186,7 +185,7 @@ struct SpinningObject : public Object {
         float speeds[] = {0.001f, 0.002f, 0.003f};
         float angle = my_spin_speed * (time_millis - my_spinning_init_time);
         mat4 now_rotate = glm::rotate(mat4(1), angle, cur_rot_vec) * cur_rot_matrix;
-        if (positive_rand(100) == 0) { // todo uncomment
+        if (positive_rand(100) == 0) {
             my_spin_speed = speeds[positive_rand(sizeof(speeds) / sizeof(*speeds))];
             cur_rot_matrix = now_rotate;
             do {
