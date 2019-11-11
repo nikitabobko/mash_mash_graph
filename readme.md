@@ -2,7 +2,7 @@
 
 Here I practiced in OpenGL and GLSL a little bit. This practice was performed as part of the 
 "computer graphics" course in CMC MSU 6 semester. Written code based on template and was 
-"practice code" so it doesn't claims to be "best code ever".
+"practice code" so it doesn't claim to be "best code ever".
 
 ### Task 01 (Ray marching)
 
